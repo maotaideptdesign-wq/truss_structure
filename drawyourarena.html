@@ -30,12 +30,12 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #94a3b8;
         }
-        /* 畫布格線背景 */
+        /* 畫布格線背景 (1格為 20px) */
         .grid-bg {
             background-size: 20px 20px;
             background-image: 
-                linear-gradient(to right, rgba(148, 163, 184, 0.1) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(148, 163, 184, 0.1) 1px, transparent 1px);
+                linear-gradient(to right, rgba(148, 163, 184, 0.12) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(148, 163, 184, 0.12) 1px, transparent 1px);
         }
     </style>
 </head>
@@ -47,15 +47,15 @@
             <i class="fa-solid fa-compass-drafting text-2xl"></i>
             <div>
                 <h1 class="text-base md:text-lg font-bold tracking-wider">現場平面圖快速繪製系統</h1>
-                <p class="text-[10px] text-indigo-200 hidden md:block">同仁專用 · 行動/電腦雙端優化版</p>
+                <p class="text-[10px] text-indigo-200 hidden md:block">同仁專用 · 市集/論壇/戶外全支援版本</p>
             </div>
         </div>
         <div class="flex items-center space-x-2">
             <!-- 畫布大小選擇 -->
             <select id="canvasSizePreset" class="bg-indigo-700 text-white text-xs px-2 py-1.5 rounded border border-indigo-500 focus:outline-none">
-                <option value="800x600">標準區域 (800x600)</option>
-                <option value="1200x900">中型場地 (1200x900)</option>
-                <option value="1600x1200">大型展館 (1600x1200)</option>
+                <option value="800x600">標準區域 (800x600 - 40x30格)</option>
+                <option value="1200x900">中型場地 (1200x900 - 60x45格)</option>
+                <option value="1600x1200">大型展館 (1600x1200 - 80x60格)</option>
             </select>
             <button id="btnUndo" class="p-2 hover:bg-indigo-700 rounded transition text-xs" title="復原">
                 <i class="fa-solid fa-arrow-rotate-left"></i>
@@ -63,7 +63,7 @@
             <button id="btnClear" class="p-2 hover:bg-red-700 rounded transition text-xs" title="清空畫布">
                 <i class="fa-solid fa-trash-can"></i>
             </button>
-            <button id="btnSaveLocal" class="p-2 hover:bg-indigo-700 rounded transition text-xs hidden md:inline-flex items-center space-x-1">
+            <button id="btnSaveLocal" class="p-2 hover:bg-indigo-700 rounded transition text-xs hidden md:inline-flex items-center space-x-1" title="暫存進度">
                 <i class="fa-solid fa-floppy-disk"></i>
                 <span class="text-xs">暫存</span>
             </button>
@@ -78,15 +78,14 @@
     <div class="flex-1 flex flex-col md:flex-row overflow-hidden relative">
 
         <!-- 左側/上方：工具與元件選單 -->
-        <!-- 手機上改為上方橫向滑動，電腦上為左側直立面版 -->
-        <aside class="w-full md:w-80 bg-white border-b md:border-b-0 md:border-r border-slate-200 flex flex-col shrink-0 z-10 max-h-[35vh] md:max-h-none overflow-hidden">
-            <!-- 頁籤切換 (手機版收納) -->
+        <aside class="w-full md:w-80 bg-white border-b md:border-b-0 md:border-r border-slate-200 flex flex-col shrink-0 z-10 max-h-[40vh] md:max-h-none overflow-hidden">
+            <!-- 頁籤切換 -->
             <div class="flex border-b border-slate-200 text-sm shrink-0">
                 <button id="tabElements" class="flex-1 py-3 text-center border-b-2 border-indigo-600 font-bold text-indigo-600">
-                    <i class="fa-solid fa-shapes mr-1"></i>活動元件
+                    <i class="fa-solid fa-shapes mr-1"></i>活動元件庫
                 </button>
                 <button id="tabTools" class="flex-1 py-3 text-center border-b-2 border-transparent text-slate-500 hover:text-slate-800 font-medium">
-                    <i class="fa-solid fa-pen-ruler mr-1"></i>繪圖與文字
+                    <i class="fa-solid fa-pen-ruler mr-1"></i>繪圖與線段
                 </button>
             </div>
 
@@ -94,84 +93,127 @@
             <div class="flex-1 overflow-y-auto p-3">
                 <!-- 頁籤 1: 活動元件 -->
                 <div id="panelElements" class="space-y-4">
-                    <!-- 舞台與講台 -->
+                    
+                    <!-- 1. 論壇與會議專區 -->
                     <div>
-                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">舞台與講台</h3>
+                        <h3 class="text-xs font-bold text-indigo-500 uppercase tracking-wider mb-2 flex items-center">
+                            <i class="fa-solid fa-microphone-lines mr-1"></i>論壇會議
+                        </h3>
                         <div class="grid grid-cols-3 gap-2">
                             <button onclick="addElement('stage-main')" class="flex flex-col items-center justify-center p-2 border border-slate-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50/50 transition">
-                                <div class="w-10 h-6 bg-amber-200 border-2 border-amber-500 rounded flex items-center justify-center text-[10px] font-bold">主舞台</div>
-                                <span class="text-[11px] mt-1 text-slate-600">主舞台</span>
+                                <div class="w-9 h-5 bg-amber-200 border border-amber-500 rounded text-[9px] text-center font-bold">舞台</div>
+                                <span class="text-[10px] mt-1 text-slate-600">演講舞台</span>
                             </button>
-                            <button onclick="addElement('stage-sub')" class="flex flex-col items-center justify-center p-2 border border-slate-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50/50 transition">
-                                <div class="w-8 h-5 bg-amber-100 border border-amber-400 rounded flex items-center justify-center text-[9px]">副舞台</div>
-                                <span class="text-[11px] mt-1 text-slate-600">副舞台</span>
+                            <button onclick="addElement('lectern')" class="flex flex-col items-center justify-center p-2 border border-slate-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50/50 transition">
+                                <div class="w-6 h-6 bg-slate-300 border border-slate-500 rounded flex items-center justify-center text-xs">🎤</div>
+                                <span class="text-[10px] mt-1 text-slate-600">水晶講桌</span>
                             </button>
-                            <button onclick="addElement('podium')" class="flex flex-col items-center justify-center p-2 border border-slate-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50/50 transition">
-                                <div class="w-5 h-5 bg-yellow-600 border border-yellow-800 rounded flex items-center justify-center text-[8px] text-white">🎤</div>
-                                <span class="text-[11px] mt-1 text-slate-600">司儀台</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- 桌椅設施 -->
-                    <div>
-                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">桌椅與席位</h3>
-                        <div class="grid grid-cols-3 gap-2">
-                            <button onclick="addElement('table-long')" class="flex flex-col items-center justify-center p-2 border border-slate-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50/50 transition">
-                                <div class="w-12 h-6 bg-orange-100 border border-orange-500 rounded flex items-center justify-center text-[9px]">長桌席</div>
-                                <span class="text-[11px] mt-1 text-slate-600">長條桌</span>
-                            </button>
-                            <button onclick="addElement('table-round')" class="flex flex-col items-center justify-center p-2 border border-slate-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50/50 transition">
-                                <div class="w-8 h-8 rounded-full bg-orange-100 border border-orange-500 flex items-center justify-center text-[9px]">圓桌</div>
-                                <span class="text-[11px] mt-1 text-slate-600">圓桌席</span>
+                            <button onclick="addElement('vip-sofa')" class="flex flex-col items-center justify-center p-2 border border-slate-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50/50 transition">
+                                <div class="w-10 h-5 bg-cyan-100 border border-cyan-500 rounded flex items-center justify-center text-[9px]">🛋️ Sofa</div>
+                                <span class="text-[10px] mt-1 text-slate-600">貴賓沙發</span>
                             </button>
                             <button onclick="addElement('chair-row')" class="flex flex-col items-center justify-center p-2 border border-slate-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50/50 transition">
-                                <div class="flex space-x-0.5 justify-center">
-                                    <div class="w-3 h-3 bg-blue-100 border border-blue-500 rounded text-[7px] text-center">🪑</div>
-                                    <div class="w-3 h-3 bg-blue-100 border border-blue-500 rounded text-[7px] text-center">🪑</div>
-                                </div>
-                                <span class="text-[11px] mt-1 text-slate-600">一排觀眾椅</span>
+                                <div class="text-xs">🪑🪑🪑</div>
+                                <span class="text-[10px] mt-1 text-slate-600">觀眾排椅</span>
+                            </button>
+                            <button onclick="addElement('bar-table')" class="flex flex-col items-center justify-center p-2 border border-slate-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50/50 transition">
+                                <div class="w-6 h-6 rounded-full bg-slate-100 border border-slate-400 flex items-center justify-center text-[10px]">⚪</div>
+                                <span class="text-[10px] mt-1 text-slate-600">交流高腳桌</span>
+                            </button>
+                            <button onclick="addElement('checkin')" class="flex flex-col items-center justify-center p-2 border border-slate-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50/50 transition">
+                                <div class="w-10 h-5 bg-teal-100 border border-teal-500 rounded text-[8px] text-center font-bold">簽到處</div>
+                                <span class="text-[10px] mt-1 text-slate-600">報到服務台</span>
                             </button>
                         </div>
                     </div>
 
-                    <!-- 活動常用硬體 -->
+                    <!-- 2. 文創與戶外市集專區 -->
                     <div>
-                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">設備與隔間</h3>
+                        <h3 class="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-2 flex items-center">
+                            <i class="fa-solid fa-store mr-1"></i>市集展攤
+                        </h3>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button onclick="addElement('booth-standard')" class="flex flex-col items-center justify-center p-2 border border-slate-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50/50 transition">
+                                <div class="w-8 h-8 bg-emerald-50 border-2 border-dashed border-emerald-500 flex items-center justify-center text-[10px] text-emerald-700 font-bold">3x3</div>
+                                <span class="text-[10px] mt-1 text-slate-600">標準攤位</span>
+                            </button>
+                            <button onclick="addElement('food-truck')" class="flex flex-col items-center justify-center p-2 border border-slate-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50/50 transition">
+                                <div class="w-10 h-6 bg-yellow-100 border-2 border-amber-500 rounded-md flex items-center justify-center text-xs">🚚</div>
+                                <span class="text-[10px] mt-1 text-slate-600">造型餐車</span>
+                            </button>
+                            <button onclick="addElement('table-long')" class="flex flex-col items-center justify-center p-2 border border-slate-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50/50 transition">
+                                <div class="w-10 h-5 bg-orange-100 border border-orange-500 rounded text-[9px] text-center">長條桌</div>
+                                <span class="text-[10px] mt-1 text-slate-600">陳列長桌</span>
+                            </button>
+                            <button onclick="addElement('table-round')" class="flex flex-col items-center justify-center p-2 border border-slate-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50/50 transition">
+                                <div class="w-7 h-7 rounded-full bg-orange-100 border border-orange-400 flex items-center justify-center text-[9px]">圓桌</div>
+                                <span class="text-[10px] mt-1 text-slate-600">市集圓桌</span>
+                            </button>
+                            <button onclick="addElement('umbrella')" class="flex flex-col items-center justify-center p-2 border border-slate-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50/50 transition">
+                                <div class="w-8 h-8 rounded-full bg-sky-100 border-2 border-sky-400 flex items-center justify-center text-xs">⛱️</div>
+                                <span class="text-[10px] mt-1 text-slate-600">戶外遮陽傘</span>
+                            </button>
+                            <button onclick="addElement('signboard')" class="flex flex-col items-center justify-center p-2 border border-slate-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50/50 transition">
+                                <div class="w-5 h-6 bg-amber-800 border border-amber-950 text-white text-[8px] text-center flex items-center justify-center font-bold">看板</div>
+                                <span class="text-[10px] mt-1 text-slate-600">雙面立牌</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 3. 戶外大型活動專區 -->
+                    <div>
+                        <h3 class="text-xs font-bold text-sky-600 uppercase tracking-wider mb-2 flex items-center">
+                            <i class="fa-solid fa-cloud-sun mr-1"></i>戶外公共
+                        </h3>
                         <div class="grid grid-cols-3 gap-2">
                             <button onclick="addElement('tent')" class="flex flex-col items-center justify-center p-2 border border-slate-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50/50 transition">
-                                <div class="w-8 h-8 bg-sky-100 border-2 border-sky-500 flex items-center justify-center text-xs">⛺</div>
-                                <span class="text-[11px] mt-1 text-slate-600">帳篷 (3x3)</span>
+                                <div class="w-8 h-8 bg-sky-50 border-2 border-sky-500 flex items-center justify-center text-xs">⛺</div>
+                                <span class="text-[10px] mt-1 text-slate-600">阿里山帳篷</span>
                             </button>
-                            <button onclick="addElement('reception')" class="flex flex-col items-center justify-center p-2 border border-slate-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50/50 transition">
-                                <div class="w-10 h-5 bg-teal-100 border border-teal-500 rounded flex items-center justify-center text-[9px] font-bold">服務台</div>
-                                <span class="text-[11px] mt-1 text-slate-600">招待/接待處</span>
+                            <button onclick="addElement('arch-gate')" class="flex flex-col items-center justify-center p-2 border border-slate-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50/50 transition">
+                                <div class="w-10 h-3 border-2 border-pink-500 rounded-t-lg bg-pink-50 text-[8px] text-center">ARCH</div>
+                                <span class="text-[10px] mt-1 text-slate-600">充氣拱門</span>
                             </button>
-                            <button onclick="addElement('screen')" class="flex flex-col items-center justify-center p-2 border border-slate-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50/50 transition">
-                                <div class="w-10 h-2 bg-slate-300 border border-slate-600 rounded"></div>
-                                <span class="text-[11px] mt-1 text-slate-600">投影幕/電視</span>
+                            <button onclick="addElement('toilet')" class="flex flex-col items-center justify-center p-2 border border-slate-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50/50 transition">
+                                <div class="w-6 h-8 bg-purple-100 border border-purple-500 rounded flex items-center justify-center text-xs">🚻</div>
+                                <span class="text-[10px] mt-1 text-slate-600">流動廁所</span>
+                            </button>
+                            <button onclick="addElement('medical')" class="flex flex-col items-center justify-center p-2 border border-slate-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50/50 transition">
+                                <div class="w-8 h-8 bg-red-50 border border-red-500 rounded flex items-center justify-center text-xs">🚑</div>
+                                <span class="text-[10px] mt-1 text-slate-600">醫務急救站</span>
+                            </button>
+                            <button onclick="addElement('trash')" class="flex flex-col items-center justify-center p-2 border border-slate-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50/50 transition">
+                                <div class="w-7 h-5 bg-gray-200 border border-gray-500 rounded flex items-center justify-center text-[10px]">♻️</div>
+                                <span class="text-[10px] mt-1 text-slate-600">垃圾分類處</span>
+                            </button>
+                            <button onclick="addElement('plant')" class="flex flex-col items-center justify-center p-2 border border-slate-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50/50 transition">
+                                <div class="text-xs">🌿</div>
+                                <span class="text-[10px] mt-1 text-slate-600">景觀植栽</span>
                             </button>
                         </div>
                     </div>
 
-                    <!-- 標示與景觀 -->
+                    <!-- 4. 基礎設施與設備 -->
                     <div>
-                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">標示與美化</h3>
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center">
+                            <i class="fa-solid fa-plug mr-1"></i>設備標示
+                        </h3>
                         <div class="grid grid-cols-3 gap-2">
+                            <button onclick="addElement('screen')" class="flex flex-col items-center justify-center p-2 border border-slate-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50/50 transition">
+                                <div class="w-8 h-1 bg-slate-700"></div>
+                                <span class="text-[10px] mt-1 text-slate-600">LED投影幕</span>
+                            </button>
                             <button onclick="addElement('exit')" class="flex flex-col items-center justify-center p-2 border border-slate-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50/50 transition">
-                                <div class="w-8 h-4 bg-emerald-500 text-white text-[8px] font-bold rounded flex items-center justify-center">EXIT</div>
-                                <span class="text-[11px] mt-1 text-slate-600">安全出口</span>
+                                <div class="bg-emerald-500 text-white text-[8px] px-1 rounded">EXIT</div>
+                                <span class="text-[10px] mt-1 text-slate-600">安全出口</span>
                             </button>
                             <button onclick="addElement('arrow-way')" class="flex flex-col items-center justify-center p-2 border border-slate-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50/50 transition">
-                                <div class="text-slate-700 text-sm"><i class="fa-solid fa-arrow-up"></i></div>
-                                <span class="text-[11px] mt-1 text-slate-600">動線指標</span>
-                            </button>
-                            <button onclick="addElement('plant')" class="flex flex-col items-center justify-center p-2 border border-slate-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50/50 transition">
-                                <div class="w-5 h-5 rounded-full bg-green-500 border border-green-700 flex items-center justify-center text-xs">🌿</div>
-                                <span class="text-[11px] mt-1 text-slate-600">景觀盆栽</span>
+                                <div class="text-xs">⬆️</div>
+                                <span class="text-[10px] mt-1 text-slate-600">動線指標</span>
                             </button>
                         </div>
                     </div>
+
                 </div>
 
                 <!-- 頁籤 2: 繪圖與文字工具 -->
@@ -180,16 +222,25 @@
                     <div>
                         <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">手動繪製區域</h3>
                         <div class="grid grid-cols-2 gap-2">
-                            <button id="toolDrawWall" class="flex items-center justify-center space-x-2 p-2.5 border border-slate-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50 transition text-sm">
-                                <i class="fa-solid fa-pen-nib text-slate-600"></i>
+                            <button id="toolDrawWall" class="flex flex-col items-center justify-center p-2 border border-slate-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50 transition text-xs">
+                                <i class="fa-solid fa-pen-nib text-slate-600 text-base mb-1"></i>
                                 <span>繪製隔牆 (多邊形)</span>
                             </button>
-                            <button id="toolDrawRect" class="flex items-center justify-center space-x-2 p-2.5 border border-slate-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50 transition text-sm">
-                                <i class="fa-regular fa-square text-slate-600"></i>
-                                <span>畫矩形塊</span>
+                            <button id="toolDrawRect" class="flex flex-col items-center justify-center p-2 border border-slate-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50 transition text-xs">
+                                <i class="fa-regular fa-square text-slate-600 text-base mb-1"></i>
+                                <span>畫自訂區域 (拖曳)</span>
                             </button>
                         </div>
-                        <p class="text-[10px] text-slate-400 mt-1">點擊「繪製隔牆」後，在畫布上連續點選以畫出邊界，雙擊結束。</p>
+                        <p id="drawingHelpText" class="text-[10px] text-slate-400 mt-2">點擊「繪製隔牆」後，在畫布上連續點選以畫出邊界，雙擊結束。</p>
+                    </div>
+
+                    <!-- 線條粗細調整 -->
+                    <div>
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">隔牆線條粗細</h3>
+                        <div class="flex items-center space-x-2">
+                            <input type="range" id="wallThickness" min="2" max="15" value="4" class="flex-1 accent-indigo-600">
+                            <span id="wallThicknessVal" class="text-xs text-indigo-600 font-bold w-8 text-right">4px</span>
+                        </div>
                     </div>
 
                     <!-- 自訂標籤 -->
@@ -226,7 +277,7 @@
                 </div>
             </div>
 
-            <!-- 元件清單底部的縮放操作（電腦/手機都很實用） -->
+            <!-- 底部縮放操作 -->
             <div class="bg-slate-100 p-2.5 border-t border-slate-200 shrink-0 flex items-center justify-between text-xs text-slate-500">
                 <span id="canvasDimInfo">尺寸: 800 x 600</span>
                 <div class="flex items-center space-x-2">
@@ -240,20 +291,23 @@
         <!-- 右側/中間：主畫布區域 -->
         <main class="flex-1 relative overflow-hidden bg-slate-300 flex items-center justify-center p-4">
             
-            <!-- 實際的繪圖區塊外包裝 (允許在內部滾動或拖移) -->
+            <!-- 實際的繪圖區塊外包裝 -->
             <div id="canvasViewport" class="w-full h-full overflow-auto flex items-center justify-center relative">
                 
                 <!-- 畫布核心 -->
                 <div id="floorplanCanvas" class="bg-white shadow-2xl relative grid-bg transition-shadow duration-300 origin-center" style="width: 800px; height: 600px;">
-                    <!-- SVG 畫布：用於繪製牆線、隔間與連線 -->
-                    <svg id="svgOverlay" class="absolute inset-0 w-full h-full pointer-events-none z-10">
+                    <!-- SVG 畫布：用於繪製牆線、隔間與連線。藉由 style 穿透 pointer 點擊以確保 children 能被點擊 -->
+                    <svg id="svgOverlay" class="absolute inset-0 w-full h-full z-10" style="pointer-events: none;">
                         <!-- 所有繪製好的線條會動態渲染在此 -->
                     </svg>
 
                     <!-- HTML 元件容器 -->
                     <div id="elementsContainer" class="absolute inset-0 z-20 overflow-hidden">
-                        <!-- 拖曳元件會被放置在這裡 -->
+                        <!-- 拖曳元件與自訂區域會被放置在這裡 -->
                     </div>
+
+                    <!-- 矩形繪製輔助預覽框 -->
+                    <div id="rectDrawPreview" class="absolute border-2 border-dashed border-indigo-500 bg-indigo-500/10 hidden z-30 pointer-events-none"></div>
                 </div>
 
             </div>
@@ -265,8 +319,7 @@
             </div>
         </main>
 
-        <!-- 選取元件時的「右側/底部屬性控制面板」 -->
-        <!-- 電腦顯示在最右側，手機彈出在底端 -->
+        <!-- 選取元件屬性控制面板 -->
         <div id="controlPanel" class="hidden absolute bottom-0 md:top-0 md:right-0 md:bottom-auto w-full md:w-72 bg-white border-t md:border-t-0 md:border-l border-slate-200 shadow-2xl md:shadow-none z-30 flex flex-col p-4 space-y-3 shrink-0 transform translate-y-full md:translate-y-0 transition-transform duration-300 max-h-[50vh] md:max-h-full overflow-y-auto">
             <div class="flex items-center justify-between border-b border-slate-100 pb-2">
                 <h2 class="font-bold text-sm text-indigo-700 flex items-center">
@@ -286,7 +339,33 @@
                     <input type="text" id="propName" class="w-full px-2.5 py-1.5 border border-slate-300 rounded focus:outline-none focus:border-indigo-500">
                 </div>
 
-                <!-- 旋轉控制 (對手機極為友善) -->
+                <!-- 精確佔地尺寸調整 (極致對齊網格，1格 = 20px) -->
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="text-slate-500 font-semibold">佔地尺寸微調 (1格 = 20px)</label>
+                        <span id="propGridInfo" class="text-indigo-600 font-bold">0格 x 0格</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 bg-slate-50 p-2 rounded border border-slate-100">
+                        <div>
+                            <span class="text-[10px] text-slate-400 block mb-0.5">寬度(像素)</span>
+                            <div class="flex items-center space-x-1">
+                                <input type="number" id="propWidth" min="20" max="1000" step="20" class="w-full px-1.5 py-1 border border-slate-300 rounded text-center text-xs">
+                                <button onclick="changePropSize('w', -20)" class="px-1.5 py-1 bg-slate-200 rounded font-bold hover:bg-slate-300">-</button>
+                                <button onclick="changePropSize('w', 20)" class="px-1.5 py-1 bg-slate-200 rounded font-bold hover:bg-slate-300">+</button>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-slate-400 block mb-0.5">高度(像素)</span>
+                            <div class="flex items-center space-x-1">
+                                <input type="number" id="propHeight" min="20" max="1000" step="20" class="w-full px-1.5 py-1 border border-slate-300 rounded text-center text-xs">
+                                <button onclick="changePropSize('h', -20)" class="px-1.5 py-1 bg-slate-200 rounded font-bold hover:bg-slate-300">-</button>
+                                <button onclick="changePropSize('h', 20)" class="px-1.5 py-1 bg-slate-200 rounded font-bold hover:bg-slate-300">+</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 旋轉控制 -->
                 <div>
                     <div class="flex items-center justify-between mb-1">
                         <label class="text-slate-500 font-semibold">旋轉角度</label>
@@ -304,7 +383,7 @@
                 <!-- 縮放比例 -->
                 <div>
                     <div class="flex items-center justify-between mb-1">
-                        <label class="text-slate-500 font-semibold">大小縮放</label>
+                        <label class="text-slate-500 font-semibold">整體等比例縮放</label>
                         <span id="propScaleVal" class="text-indigo-600 font-bold">100%</span>
                     </div>
                     <div class="flex items-center space-x-2">
@@ -316,7 +395,7 @@
                     </div>
                 </div>
 
-                <!-- 顏色選取 (若適用) -->
+                <!-- 顏色選取 -->
                 <div id="propColorSection">
                     <label class="block text-slate-500 font-semibold mb-1">主題顏色</label>
                     <div class="flex space-x-2">
@@ -325,6 +404,7 @@
                         <button onclick="changeColor('#dbeafe', '#2563eb')" class="w-6 h-6 rounded-full border border-blue-400 bg-blue-100" title="天藍色"></button>
                         <button onclick="changeColor('#f0fdf4', '#16a34a')" class="w-6 h-6 rounded-full border border-green-400 bg-green-100" title="森綠色"></button>
                         <button onclick="changeColor('#f3f4f6', '#374151')" class="w-6 h-6 rounded-full border border-slate-400 bg-slate-100" title="經典灰"></button>
+                        <button onclick="changeColor('rgba(99, 102, 241, 0.15)', '#6366f1')" class="w-6 h-6 rounded-full border border-indigo-500 bg-indigo-100" title="自訂紫"></button>
                     </div>
                 </div>
 
@@ -361,7 +441,24 @@
         </div>
     </div>
 
-    <!-- 提示框元件 (取代 alert) -->
+    <!-- 自訂刪除確認 Modal (取代 browser confirm 以符合 Canvas iframe 規範) -->
+    <div id="customConfirmModal" class="fixed inset-0 bg-slate-900/60 flex items-center justify-center hidden z-50">
+        <div class="bg-white p-5 rounded-xl shadow-2xl max-w-xs w-full text-center space-y-4 mx-4">
+            <div class="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto text-xl">
+                <i class="fa-solid fa-circle-exclamation"></i>
+            </div>
+            <div>
+                <h4 class="font-bold text-slate-800 text-base" id="confirmTitle">確認要刪除嗎？</h4>
+                <p class="text-xs text-slate-500 mt-1" id="confirmDesc">刪除後可透過頂端「復原」按鈕還原。</p>
+            </div>
+            <div class="flex space-x-2">
+                <button id="confirmCancel" class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 rounded text-slate-600 text-xs font-semibold">取消</button>
+                <button id="confirmSuccess" class="flex-1 py-2 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-semibold">確認刪除</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 提示框元件 -->
     <div id="toastMessage" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs px-4 py-2.5 rounded-lg shadow-lg hidden z-50 transition-opacity duration-300">
         提示訊息
     </div>
@@ -382,29 +479,49 @@
         let activeTool = 'select'; // select, draw-wall, draw-rect
         let currentZoom = 1; // 畫布縮放比率
         
-        // 繪牆/多邊形專用暫存變數
+        // 隔牆線條設定
+        let wallStrokeWidth = 4;
+
+        // 繪圖與繪製區域暫存變數
         let drawPoints = [];
-        let drawLines = [];
-        let tempLine = null;
+        let isDrawingRect = false;
+        let rectStartPoint = { x: 0, y: 0 };
 
         // 復原/歷史紀錄堆疊
         let historyStack = [];
         const MAX_HISTORY = 15;
 
-        // 預置活動元件結構模板
+        // 預置活動元件結構模板 (1格 = 20px)
         const elementTemplates = {
+            // 論壇與會議
             'stage-main': { name: '主舞台', w: 180, h: 80, bg: '#fef3c7', border: '#d97706', icon: '🎭', shape: 'rect' },
-            'stage-sub': { name: '副舞台', w: 100, h: 50, bg: '#fffbeb', border: '#f59e0b', icon: '🎭', shape: 'rect' },
-            'podium': { name: '講台', w: 35, h: 35, bg: '#b45309', border: '#78350f', icon: '🎤', shape: 'square' },
-            'table-long': { name: '長條桌席', w: 120, h: 50, bg: '#ffedd5', border: '#ea580c', icon: '🛋️', shape: 'rect' },
-            'table-round': { name: '圓桌席', w: 80, h: 80, bg: '#ffedd5', border: '#ea580c', icon: '🍽️', shape: 'circle' },
-            'chair-row': { name: '一排座椅', w: 140, h: 25, bg: '#eff6ff', border: '#2563eb', icon: '🪑 🪑 🪑', shape: 'rect' },
+            'lectern': { name: '講桌', w: 40, h: 40, bg: '#e2e8f0', border: '#475569', icon: '🎤', shape: 'square' },
+            'vip-sofa': { name: '貴賓沙發', w: 100, h: 40, bg: '#e0f7fa', border: '#00acc1', icon: '🛋️', shape: 'rect' },
+            'chair-row': { name: '一排座椅', w: 140, h: 20, bg: '#eff6ff', border: '#2563eb', icon: '🪑🪑', shape: 'rect' },
+            'bar-table': { name: '交流高腳桌', w: 40, h: 40, bg: '#f8fafc', border: '#64748b', icon: '⚪', shape: 'circle' },
+            'checkin': { name: '簽到處', w: 120, h: 40, bg: '#ccfbf1', border: '#0d9488', icon: '💁', shape: 'rect' },
+
+            // 市集與展攤
+            'booth-standard': { name: '標準攤位(3x3)', w: 60, h: 60, bg: '#ecfdf5', border: '#059669', icon: '🎪', shape: 'square' },
+            'food-truck': { name: '造型餐車', w: 100, h: 60, bg: '#fffbeb', border: '#d97706', icon: '🚚', shape: 'rect' },
+            'table-long': { name: '陳列長桌', w: 120, h: 40, bg: '#ffedd5', border: '#ea580c', icon: '🛋️', shape: 'rect' },
+            'table-round': { name: '市集圓桌', w: 60, h: 60, bg: '#ffedd5', border: '#ea580c', icon: '🍽️', shape: 'circle' },
+            'umbrella': { name: '大遮陽傘', w: 60, h: 60, bg: '#e0f2fe', border: '#0284c7', icon: '⛱️', shape: 'circle' },
+            'signboard': { name: '雙面立牌', w: 40, h: 40, bg: '#fef3c7', border: '#b45309', icon: '📋', shape: 'rect' },
+
+            // 戶外公共
             'tent': { name: '阿里山帳篷', w: 100, h: 100, bg: '#e0f2fe', border: '#0284c7', icon: '⛺', shape: 'square' },
-            'reception': { name: '服務台', w: 110, h: 45, bg: '#ccfbf1', border: '#0d9488', icon: '💁', shape: 'rect' },
-            'screen': { name: '投影/LED螢幕', w: 90, h: 12, bg: '#f3f4f6', border: '#4b5563', icon: '📺', shape: 'rect' },
-            'exit': { name: '安全出口', w: 70, h: 30, bg: '#10b981', border: '#047857', icon: '🚪 EXIT', shape: 'rect', color: '#ffffff' },
-            'arrow-way': { name: '動線指標', w: 45, h: 45, bg: '#f1f5f9', border: '#475569', icon: '⬆️', shape: 'circle' },
-            'plant': { name: '景觀植栽', w: 40, h: 40, bg: '#ecfdf5', border: '#059669', icon: '🌿', shape: 'circle' }
+            'arch-gate': { name: '充氣拱門', w: 160, h: 40, bg: '#fce7f3', border: '#db2777', icon: '🎈', shape: 'rect' },
+            'toilet': { name: '流動廁所', w: 40, h: 40, bg: '#f3e8ff', border: '#9333ea', icon: '🚻', shape: 'rect' },
+            'medical': { name: '醫務急救站', w: 80, h: 80, bg: '#fef2f2', border: '#dc2626', icon: '🚑', shape: 'square' },
+            'trash': { name: '垃圾分類處', w: 60, h: 40, bg: '#f1f5f9', border: '#475569', icon: '♻️', shape: 'rect' },
+            'plant': { name: '景觀植栽', w: 40, h: 40, bg: '#ecfdf5', border: '#059669', icon: '🌿', shape: 'circle' },
+
+            // 基礎設施與設備
+            'screen': { name: 'LED投影幕', w: 100, h: 20, bg: '#f1f5f9', border: '#334155', icon: '📺', shape: 'rect' },
+            'exit': { name: '安全出口', w: 80, h: 30, bg: '#10b981', border: '#047857', icon: '🚪 EXIT', shape: 'rect', color: '#ffffff' },
+            'arrow-way': { name: '動線指標', w: 40, h: 40, bg: '#f1f5f9', border: '#475569', icon: '⬆️', shape: 'circle' },
+            'rect-block': { name: '自訂展位區域', w: 120, h: 100, bg: 'rgba(99, 102, 241, 0.15)', border: '#6366f1', icon: '📐', shape: 'rect' }
         };
 
         // --- 初始化設定與載入 ---
@@ -413,7 +530,7 @@
             setupCanvasPreset();
             setupZoomControls();
             setupAttributesControls();
-            setupWallDrawingTools();
+            setupDrawingTools();
             setupUndoClearButtons();
             loadFromLocalStorage();
             saveHistory(); // 初始歷史紀錄
@@ -431,7 +548,7 @@
                 tabTools.className = "flex-1 py-3 text-center border-b-2 border-transparent text-slate-500 hover:text-slate-800 font-medium";
                 panelElements.classList.remove('hidden');
                 panelTools.classList.add('hidden');
-                cancelWallDrawing();
+                cancelAllDrawingTools();
             });
 
             tabTools.addEventListener('click', () => {
@@ -452,7 +569,6 @@
             };
 
             if (historyStack.length > 0) {
-                // 如果跟上一個狀態一模一樣，就不重複紀錄
                 const prevStateStr = JSON.stringify(historyStack[historyStack.length - 1]);
                 if (prevStateStr === JSON.stringify(canvasState)) return;
             }
@@ -480,6 +596,7 @@
 
             // 恢復 SVG
             svgOverlay.innerHTML = prevState.svgContent;
+            bindSvgLinesEvents();
 
             // 恢復元件
             container.innerHTML = '';
@@ -506,22 +623,63 @@
             }, 2000);
         }
 
+        // 呼叫自訂確認 Modal
+        function showCustomConfirm(title, desc, onConfirm) {
+            const modal = document.getElementById('customConfirmModal');
+            document.getElementById('confirmTitle').textContent = title;
+            document.getElementById('confirmDesc').textContent = desc;
+            modal.classList.remove('hidden');
+
+            const btnCancel = document.getElementById('confirmCancel');
+            const btnSuccess = document.getElementById('confirmSuccess');
+
+            const cleanUp = () => {
+                modal.classList.add('hidden');
+                btnCancel.onclick = null;
+                btnSuccess.onclick = null;
+            };
+
+            btnCancel.onclick = () => {
+                cleanUp();
+            };
+
+            btnSuccess.onclick = () => {
+                onConfirm();
+                cleanUp();
+            };
+        }
+
         // --- 畫布尺寸預設調整 ---
         function setupCanvasPreset() {
             const select = document.getElementById('canvasSizePreset');
             select.addEventListener('change', (e) => {
                 const [w, h] = e.target.value.split('x');
+                const maxW = parseInt(w);
+                const maxH = parseInt(h);
+
+                // 設定新尺寸
                 canvas.style.width = `${w}px`;
                 canvas.style.height = `${h}px`;
-                document.getElementById('canvasDimInfo').textContent = `尺寸: ${w} x ${h}`;
+                document.getElementById('canvasDimInfo').textContent = `尺寸: ${w} x ${h} (${maxW/20}x${maxH/20}格)`;
                 
-                // 置中對齊
+                // 修正物件跑版：將所有現存物件位置座標限缩在全新邊界內 (Clamp)
+                elements.forEach(data => {
+                    const dom = document.getElementById(data.id);
+                    if (dom) {
+                        data.x = Math.max(0, Math.min(maxW - data.w, data.x));
+                        data.y = Math.max(0, Math.min(maxH - data.h, data.y));
+                        dom.style.left = `${data.x}px`;
+                        dom.style.top = `${data.y}px`;
+                    }
+                });
+
                 canvas.style.transform = `scale(${currentZoom})`;
                 saveHistory();
+                showToast("畫布已切換尺寸，物件已安全校正對齊！");
             });
         }
 
-        // --- 縮放與平移 (適合手機操作) ---
+        // --- 縮放與平移 ---
         function setupZoomControls() {
             const zoomVal = document.getElementById('zoomLevel');
             document.getElementById('btnZoomIn').addEventListener('click', () => {
@@ -543,22 +701,34 @@
             canvas.style.transform = `scale(${currentZoom})`;
         }
 
-        // --- 點擊按鈕新增元件 ---
+        // --- 置入元件（完美中心點置入） ---
         function addElement(type) {
             const template = elementTemplates[type];
             if (!template) return;
 
-            // 計算新增至中心點
+            // 抓取畫布視窗，精密計算出當前使用者眼睛看著的視窗「正中心點」在畫布上的實際座標
             const viewport = document.getElementById('canvasViewport');
-            const rect = canvas.getBoundingClientRect();
-            
-            // 相對於畫布左上角
-            let x = 100;
-            let y = 100;
-            
-            // 隨機微調防止重疊
-            x += Math.floor(Math.random() * 50);
-            y += Math.floor(Math.random() * 50);
+            const canvasRect = canvas.getBoundingClientRect();
+            const viewportRect = viewport.getBoundingClientRect();
+
+            const centerX = viewportRect.left + (viewportRect.width / 2);
+            const centerY = viewportRect.top + (viewportRect.height / 2);
+
+            let x = (centerX - canvasRect.left) / currentZoom - (template.w / 2);
+            let y = (centerY - canvasRect.top) / currentZoom - (template.h / 2);
+
+            const maxW = parseInt(canvas.style.width) || 800;
+            const maxH = parseInt(canvas.style.height) || 600;
+
+            // 避免超出邊界
+            x = Math.max(10, Math.min(maxW - template.w - 10, x));
+            y = Math.max(10, Math.min(maxH - template.h - 10, y));
+
+            // 對齊網格 (1格 20px)
+            if (snapGridCheckbox.checked) {
+                x = Math.round(x / 20) * 20;
+                y = Math.round(y / 20) * 20;
+            }
 
             const elementData = {
                 id: 'el-' + Date.now(),
@@ -589,22 +759,19 @@
             item.id = data.id;
             item.className = 'absolute cursor-move select-none flex flex-col items-center justify-center font-bold text-center border-2 transition-shadow duration-150';
             
-            // 特殊形狀處理
             if (data.shape === 'circle') {
                 item.style.borderRadius = '50%';
             } else {
-                item.style.borderRadius = '0.375rem'; // rounded-md
+                item.style.borderRadius = '0.375rem';
             }
 
-            // 套用基本外觀
+            // 確保有明確的 z-index，且滑鼠事件能正常穿透、傳遞
+            item.style.zIndex = '30';
+
             updateItemVisual(item, data);
-
-            // 點選與拖移事件處理 (支援手機 Touch & 電腦 Mouse)
             setupDragAndTouchEvents(item, data);
-
             container.appendChild(item);
             
-            // 自動選取新元件
             selectItem(item, data);
         }
 
@@ -619,18 +786,16 @@
             dom.style.color = data.textColor;
             dom.style.transform = `rotate(${data.angle}deg) scale(${data.scale / 100})`;
             
-            // 文字大小隨縮放變化
             const baseFontSize = data.type === 'exit' ? 10 : 12;
             dom.style.fontSize = `${baseFontSize * (data.scale / 100)}px`;
 
-            // 內容填充
             dom.innerHTML = `
                 <span class="pointer-events-none select-none text-[1.2em] mb-0.5">${data.icon}</span>
                 <span class="pointer-events-none select-none px-1 text-center font-medium leading-tight">${data.name}</span>
             `;
         }
 
-        // --- 手指/滑鼠 拖曳元件核心邏輯 (極度相容行動端) ---
+        // --- 手指/滑鼠 拖曳元件核心邏輯 (行動端優化) ---
         function setupDragAndTouchEvents(dom, data) {
             let isDragging = false;
             let startX = 0;
@@ -638,9 +803,7 @@
             let initialX = 0;
             let initialY = 0;
 
-            // 開始事件
             const dragStart = (e) => {
-                // 如果當前是繪圖工具，不進行拖曳
                 if (activeTool !== 'select') return;
 
                 isDragging = true;
@@ -654,33 +817,27 @@
                 initialX = data.x;
                 initialY = data.y;
 
-                dom.classList.add('shadow-xl', 'z-40');
-                
-                // 阻擋手機端背景滾動行為
+                dom.classList.add('shadow-xl', 'z-50');
                 if (e.touches) e.preventDefault();
             };
 
-            // 移動中事件
             const dragMove = (e) => {
                 if (!isDragging) return;
 
                 const clientX = e.touches ? e.touches[0].clientX : e.clientX;
                 const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
-                // 須扣除外部畫布縮放比例的位移量
                 const dx = (clientX - startX) / currentZoom;
                 const dy = (clientY - startY) / currentZoom;
 
                 let newX = initialX + dx;
                 let newY = initialY + dy;
 
-                // 對齊網格功能 (20px 一格)
                 if (snapGridCheckbox.checked) {
                     newX = Math.round(newX / 20) * 20;
                     newY = Math.round(newY / 20) * 20;
                 }
 
-                // 限制在畫布範圍
                 const canvasW = canvas.clientWidth;
                 const canvasH = canvas.clientHeight;
                 newX = Math.max(0, Math.min(canvasW - data.w, newX));
@@ -691,27 +848,19 @@
 
                 dom.style.left = `${newX}px`;
                 dom.style.top = `${newY}px`;
-
-                // 同步更新控制面板 (若有選取)
-                if (selectedElement === dom) {
-                    // 不需要每次都更新，但可以保持位置最新
-                }
             };
 
-            // 結束事件
             const dragEnd = () => {
                 if (!isDragging) return;
                 isDragging = false;
-                dom.classList.remove('shadow-xl', 'z-40');
-                saveHistory(); // 儲存拖移後的狀態
+                dom.classList.remove('shadow-xl', 'z-50');
+                saveHistory();
             };
 
-            // Mouse 事件
             dom.addEventListener('mousedown', dragStart);
             window.addEventListener('mousemove', dragMove);
             window.addEventListener('mouseup', dragEnd);
 
-            // Touch 手機觸控事件
             dom.addEventListener('touchstart', dragStart, { passive: false });
             window.addEventListener('touchmove', dragMove, { passive: false });
             window.addEventListener('touchend', dragEnd);
@@ -725,16 +874,27 @@
             dom.style.outline = "3px solid #6366f1";
             dom.style.outlineOffset = "2px";
 
-            // 填寫屬性面板資料
+            // 填充數據到面板上
             document.getElementById('propName').value = data.name;
             document.getElementById('propRotation').value = data.angle;
             document.getElementById('propAngleVal').textContent = `${data.angle}°`;
             document.getElementById('propScale').value = data.scale;
             document.getElementById('propScaleVal').textContent = `${data.scale}%`;
 
-            // 打開控制面板 (在手機上這會流暢滑上來)
+            // 同步寬度與高度 (px 以及 Grid 格數)
+            document.getElementById('propWidth').value = data.w;
+            document.getElementById('propHeight').value = data.h;
+            updateGridDisplay(data.w, data.h);
+
             controlPanel.classList.remove('hidden');
             controlPanel.classList.remove('translate-y-full');
+        }
+
+        // 更新幾格乘幾格的資訊
+        function updateGridDisplay(w, h) {
+            const gridW = Math.round(w / 20);
+            const gridH = Math.round(h / 20);
+            document.getElementById('propGridInfo').textContent = `${gridW}格 x ${gridH}格 (${w}px x ${h}px)`;
         }
 
         // 取消全選
@@ -747,7 +907,6 @@
             controlPanel.classList.add('translate-y-full');
         }
 
-        // 點擊畫布空白處取消選取
         canvas.addEventListener('click', (e) => {
             if (e.target === canvas || e.target === svgOverlay || e.target === container) {
                 deselectAll();
@@ -759,8 +918,9 @@
             const propName = document.getElementById('propName');
             const propRotation = document.getElementById('propRotation');
             const propScale = document.getElementById('propScale');
+            const propWidth = document.getElementById('propWidth');
+            const propHeight = document.getElementById('propHeight');
 
-            // 名稱變更
             propName.addEventListener('input', (e) => {
                 if (!selectedElement) return;
                 const id = selectedElement.id;
@@ -771,6 +931,31 @@
                 }
             });
             propName.addEventListener('change', () => saveHistory());
+
+            // 手動輸入寬高
+            propWidth.addEventListener('input', (e) => {
+                if (!selectedElement) return;
+                const id = selectedElement.id;
+                const data = elements.find(el => el.id === id);
+                if (data) {
+                    data.w = Math.max(20, parseInt(e.target.value) || 20);
+                    updateItemVisual(selectedElement, data);
+                    updateGridDisplay(data.w, data.h);
+                }
+            });
+            propWidth.addEventListener('change', () => saveHistory());
+
+            propHeight.addEventListener('input', (e) => {
+                if (!selectedElement) return;
+                const id = selectedElement.id;
+                const data = elements.find(el => el.id === id);
+                if (data) {
+                    data.h = Math.max(20, parseInt(e.target.value) || 20);
+                    updateItemVisual(selectedElement, data);
+                    updateGridDisplay(data.w, data.h);
+                }
+            });
+            propHeight.addEventListener('change', () => saveHistory());
 
             // 角度變更
             propRotation.addEventListener('input', (e) => {
@@ -785,7 +970,7 @@
             });
             propRotation.addEventListener('change', () => saveHistory());
 
-            // 大小變更
+            // 縮放比例變更
             propScale.addEventListener('input', (e) => {
                 if (!selectedElement) return;
                 const id = selectedElement.id;
@@ -799,7 +984,25 @@
             propScale.addEventListener('change', () => saveHistory());
         }
 
-        // 微調按鈕: 旋轉角度
+        // 修改佔地尺寸 (調整格數)
+        function changePropSize(type, delta) {
+            if (!selectedElement) return;
+            const id = selectedElement.id;
+            const data = elements.find(el => el.id === id);
+            if (data) {
+                if (type === 'w') {
+                    data.w = Math.max(20, data.w + delta);
+                    document.getElementById('propWidth').value = data.w;
+                } else {
+                    data.h = Math.max(20, data.h + delta);
+                    document.getElementById('propHeight').value = data.h;
+                }
+                updateItemVisual(selectedElement, data);
+                updateGridDisplay(data.w, data.h);
+                saveHistory();
+            }
+        }
+
         function adjustRotation(val) {
             if (!selectedElement) return;
             const id = selectedElement.id;
@@ -815,7 +1018,6 @@
             }
         }
 
-        // 微調按鈕: 大小比例
         function adjustScale(val) {
             if (!selectedElement) return;
             const id = selectedElement.id;
@@ -830,21 +1032,19 @@
             }
         }
 
-        // 置於最上層
         function bringToFront() {
             if (!selectedElement) return;
             const id = selectedElement.id;
             const index = elements.findIndex(el => el.id === id);
             if (index !== -1) {
                 const [item] = elements.splice(index, 1);
-                elements.push(item); // 移至底層陣列最尾端
-                container.appendChild(selectedElement); // 重放入 DOM 結構，自動渲染於最上
+                elements.push(item);
+                container.appendChild(selectedElement);
                 saveHistory();
                 showToast("元件已置於最頂層");
             }
         }
 
-        // 複製當前元件
         function cloneSelected() {
             if (!selectedElement) return;
             const id = selectedElement.id;
@@ -853,8 +1053,8 @@
                 const cloneData = {
                     ...source,
                     id: 'el-' + Date.now(),
-                    x: source.x + 30, // 位移避免重合
-                    y: source.y + 30
+                    x: source.x + 20,
+                    y: source.y + 20
                 };
                 recreateHTMLItem(cloneData);
                 saveHistory();
@@ -862,7 +1062,6 @@
             }
         }
 
-        // 變更主色調
         function changeColor(bg, border) {
             if (!selectedElement) return;
             const id = selectedElement.id;
@@ -875,7 +1074,6 @@
             }
         }
 
-        // 刪除選取元件
         function deleteSelected() {
             if (!selectedElement) return;
             const id = selectedElement.id;
@@ -891,73 +1089,120 @@
             const input = document.getElementById('txtLabelInput');
             const text = input.value.trim();
             if (!text) {
-                showToast("請輸入欲顯示的文字！");
+                showToast("請輸入說明文字！");
                 return;
             }
 
-            const size = document.getElementById('labelSize').value;
+            const size = parseInt(document.getElementById('labelSize').value) || 14;
 
-            // 文字元件實體設定
             const textData = {
                 id: 'el-' + Date.now(),
                 type: 'text',
                 name: text,
-                x: 150,
-                y: 150,
-                w: 120,
+                x: 100,
+                y: 100,
+                w: 140,
                 h: 40,
                 angle: 0,
-                scale: 100,
-                bg: 'rgba(255, 255, 255, 0)', // 完全透明背景
-                border: 'rgba(255, 255, 255, 0)', // 完全透明框線
+                scale: Math.round((size / 12) * 100),
+                bg: 'rgba(255, 255, 255, 0)',
+                border: 'rgba(255, 255, 255, 0)',
                 icon: '💬',
                 shape: 'rect',
                 textColor: '#1e293b'
             };
 
+            // 利用中心點置入
+            const viewport = document.getElementById('canvasViewport');
+            const canvasRect = canvas.getBoundingClientRect();
+            const viewportRect = viewport.getBoundingClientRect();
+            const centerX = viewportRect.left + (viewportRect.width / 2);
+            const centerY = viewportRect.top + (viewportRect.height / 2);
+            textData.x = Math.max(10, ((centerX - canvasRect.left) / currentZoom) - 70);
+            textData.y = Math.max(10, ((centerY - canvasRect.top) / currentZoom) - 20);
+
             recreateHTMLItem(textData);
-            input.value = ''; // 清空
+            input.value = '';
             saveHistory();
             showToast("成功添加文字標籤");
         }
 
 
-        // --- 牆面與區域繪製工具 (多邊形與線段) ---
-        function setupWallDrawingTools() {
+        // --- 繪製隔牆線條、自訂矩形區塊與粗細設定 ---
+        function setupDrawingTools() {
             const btnDrawWall = document.getElementById('toolDrawWall');
             const btnDrawRect = document.getElementById('toolDrawRect');
+            const thicknessSlider = document.getElementById('wallThickness');
+            const thicknessVal = document.getElementById('wallThicknessVal');
+            const helpText = document.getElementById('drawingHelpText');
 
+            thicknessSlider.addEventListener('input', (e) => {
+                wallStrokeWidth = parseInt(e.target.value);
+                thicknessVal.textContent = `${wallStrokeWidth}px`;
+            });
+
+            // 1. 繪製多邊形隔牆按鈕點擊
             btnDrawWall.addEventListener('click', () => {
                 if (activeTool === 'draw-wall') {
-                    cancelWallDrawing();
+                    cancelAllDrawingTools();
                 } else {
                     deselectAll();
+                    cancelAllDrawingTools();
                     activeTool = 'draw-wall';
                     drawPoints = [];
                     btnDrawWall.classList.add('border-indigo-600', 'bg-indigo-50', 'text-indigo-600');
                     canvas.style.cursor = 'crosshair';
-                    showToast("已啟用繪線模式，在畫布上連續點擊繪線，雙擊空白完成！");
+                    helpText.textContent = "繪隔牆模式：在畫布連續按點，最後「雙擊(Double Click)空處」完成！";
+                    showToast("已啟用繪線隔間模式");
                 }
             });
 
-            // 連點/雙擊結束牆面繪製
-            canvas.addEventListener('click', (e) => {
-                if (activeTool !== 'draw-wall') return;
-                
-                // 計算相對於 svgOverlay 的坐標
-                const rect = canvas.getBoundingClientRect();
-                let x = (e.clientX - rect.left) / currentZoom;
-                let y = (e.clientY - rect.top) / currentZoom;
-
-                // 輔助對齊網格
-                if (snapGridCheckbox.checked) {
-                    x = Math.round(x / 20) * 20;
-                    y = Math.round(y / 20) * 20;
+            // 2. 矩形繪製按鈕點擊
+            btnDrawRect.addEventListener('click', () => {
+                if (activeTool === 'draw-rect') {
+                    cancelAllDrawingTools();
+                } else {
+                    deselectAll();
+                    cancelAllDrawingTools();
+                    activeTool = 'draw-rect';
+                    btnDrawRect.classList.add('border-indigo-600', 'bg-indigo-50', 'text-indigo-600');
+                    canvas.style.cursor = 'crosshair';
+                    helpText.textContent = "畫自訂展位模式：在畫布上「按住並拖曳」即可拉出一個自訂活動展區。";
+                    showToast("已啟用拖曳畫自訂展間模式");
                 }
+            });
 
+            canvas.addEventListener('mousedown', startDrawingProcess);
+            canvas.addEventListener('touchstart', startDrawingProcess, { passive: false });
+
+            window.addEventListener('mousemove', drawingProcessMove);
+            window.addEventListener('touchmove', drawingProcessMove, { passive: false });
+
+            window.addEventListener('mouseup', endDrawingProcess);
+            window.addEventListener('touchend', endDrawingProcess);
+        }
+
+        // --- 開始繪製程序 ---
+        function startDrawingProcess(e) {
+            if (activeTool === 'select') return;
+
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+            let x = (clientX - rect.left) / currentZoom;
+            let y = (clientY - rect.top) / currentZoom;
+
+            if (snapGridCheckbox.checked) {
+                x = Math.round(x / 20) * 20;
+                y = Math.round(y / 20) * 20;
+            }
+
+            if (activeTool === 'draw-wall') {
+                if (e.type === 'touchstart') return;
+                
                 drawPoints.push({ x, y });
 
-                // 在 SVG 上畫一個臨時節點點
                 const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
                 circle.setAttribute("cx", x);
                 circle.setAttribute("cy", y);
@@ -966,7 +1211,6 @@
                 circle.setAttribute("class", "temp-draw-node");
                 svgOverlay.appendChild(circle);
 
-                // 如果多於一個點，連接前一個點
                 if (drawPoints.length > 1) {
                     const prev = drawPoints[drawPoints.length - 2];
                     const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
@@ -974,123 +1218,224 @@
                     line.setAttribute("y1", prev.y);
                     line.setAttribute("x2", x);
                     line.setAttribute("y2", y);
-                    line.setAttribute("stroke", "#475569");
-                    line.setAttribute("stroke-width", "5");
+                    line.setAttribute("stroke", "#6366f1");
+                    line.setAttribute("stroke-width", wallStrokeWidth);
                     line.setAttribute("stroke-linecap", "round");
+                    line.setAttribute("stroke-dasharray", "4");
                     line.setAttribute("class", "temp-draw-line");
                     svgOverlay.appendChild(line);
                 }
-            });
+            }
 
-            // 雙擊結束多邊形繪製
-            canvas.addEventListener('dblclick', (e) => {
-                if (activeTool !== 'draw-wall' || drawPoints.length < 2) return;
+            if (activeTool === 'draw-rect') {
+                isDrawingRect = true;
+                rectStartPoint = { x, y };
                 
-                // 清理臨時標記
-                document.querySelectorAll('.temp-draw-node').forEach(el => el.remove());
-                document.querySelectorAll('.temp-draw-line').forEach(el => el.remove());
+                const preview = document.getElementById('rectDrawPreview');
+                preview.style.left = `${x}px`;
+                preview.style.top = `${y}px`;
+                preview.style.width = '0px';
+                preview.style.height = '0px';
+                preview.classList.remove('hidden');
 
-                // 將畫好線段固定到 SVG 中
-                for (let i = 0; i < drawPoints.length - 1; i++) {
-                    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-                    line.setAttribute("x1", drawPoints[i].x);
-                    line.setAttribute("y1", drawPoints[i].y);
-                    line.setAttribute("x2", drawPoints[i+1].x);
-                    line.setAttribute("y2", drawPoints[i+1].y);
-                    line.setAttribute("stroke", "#1e293b"); // 極深灰牆線
-                    line.setAttribute("stroke-width", "6");
-                    line.setAttribute("stroke-linecap", "round");
-                    
-                    // 點擊線條也可以被刪除
-                    line.style.cursor = 'pointer';
-                    line.addEventListener('click', (ev) => {
-                        ev.stopPropagation();
-                        if (confirm('確定要刪除這條隔間線嗎？')) {
-                            line.remove();
-                            saveHistory();
-                        }
-                    });
+                if (e.touches) e.preventDefault();
+            }
+        }
 
-                    svgOverlay.appendChild(line);
+        // --- 繪製中拖動 ---
+        function drawingProcessMove(e) {
+            if (activeTool === 'draw-rect' && isDrawingRect) {
+                const rect = canvas.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+                let x = (clientX - rect.left) / currentZoom;
+                let y = (clientY - rect.top) / currentZoom;
+
+                if (snapGridCheckbox.checked) {
+                    x = Math.round(x / 20) * 20;
+                    y = Math.round(y / 20) * 20;
                 }
 
-                cancelWallDrawing();
-                saveHistory();
-                showToast("已成功繪製隔牆！點擊線段可以將其刪除。");
+                const preview = document.getElementById('rectDrawPreview');
+                
+                const left = Math.min(rectStartPoint.x, x);
+                const top = Math.min(rectStartPoint.y, y);
+                const width = Math.abs(rectStartPoint.x - x);
+                const height = Math.abs(rectStartPoint.y - y);
+
+                preview.style.left = `${left}px`;
+                preview.style.top = `${top}px`;
+                preview.style.width = `${width}px`;
+                preview.style.height = `${height}px`;
+
+                if (e.touches) e.preventDefault();
+            }
+        }
+
+        // --- 結束繪製 ---
+        function endDrawingProcess() {
+            if (activeTool === 'draw-rect' && isDrawingRect) {
+                isDrawingRect = false;
+                const preview = document.getElementById('rectDrawPreview');
+                preview.classList.add('hidden');
+
+                const left = parseFloat(preview.style.left);
+                const top = parseFloat(preview.style.top);
+                const width = parseFloat(preview.style.width);
+                const height = parseFloat(preview.style.height);
+
+                if (width > 15 && height > 15) {
+                    const rectTemplate = elementTemplates['rect-block'];
+                    
+                    const elementData = {
+                        id: 'el-' + Date.now(),
+                        type: 'rect-block',
+                        name: '自訂展位區域',
+                        x: left,
+                        y: top,
+                        w: width,
+                        h: height,
+                        angle: 0,
+                        scale: 100,
+                        bg: rectTemplate.bg,
+                        border: rectTemplate.border,
+                        icon: rectTemplate.icon,
+                        shape: rectTemplate.shape,
+                        textColor: '#4f46e5'
+                    };
+
+                    recreateHTMLItem(elementData);
+                    saveHistory();
+                    showToast("已成功新增自訂展位區域！");
+                }
+                cancelAllDrawingTools();
+            }
+        }
+
+        // 綁定畫布 SVG 牆線的點擊刪除
+        function bindSvgLinesEvents() {
+            svgOverlay.querySelectorAll('line').forEach(line => {
+                line.style.pointerEvents = 'visibleStroke';
+                line.style.cursor = 'pointer';
+
+                line.onclick = (ev) => {
+                    ev.stopPropagation();
+                    showCustomConfirm(
+                        "確定要刪除這條隔間線嗎？",
+                        "刪除後可透過頂端「復原」按鈕還原。",
+                        () => {
+                            line.remove();
+                            saveHistory();
+                            showToast("隔間線段已刪除");
+                        }
+                    );
+                };
             });
         }
 
-        // 取消繪圖模式
-        function cancelWallDrawing() {
-            activeTool = 'select';
-            drawPoints = [];
+        // 雙擊結束多邊形繪牆
+        canvas.addEventListener('dblclick', () => {
+            if (activeTool !== 'draw-wall' || drawPoints.length < 2) return;
+
             document.querySelectorAll('.temp-draw-node').forEach(el => el.remove());
             document.querySelectorAll('.temp-draw-line').forEach(el => el.remove());
-            
+
+            for (let i = 0; i < drawPoints.length - 1; i++) {
+                const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                line.setAttribute("x1", drawPoints[i].x);
+                line.setAttribute("y1", drawPoints[i].y);
+                line.setAttribute("x2", drawPoints[i+1].x);
+                line.setAttribute("y2", drawPoints[i+1].y);
+                line.setAttribute("stroke", "#1e293b");
+                line.setAttribute("stroke-width", wallStrokeWidth);
+                line.setAttribute("stroke-linecap", "round");
+                
+                svgOverlay.appendChild(line);
+            }
+
+            bindSvgLinesEvents();
+            cancelAllDrawingTools();
+            saveHistory();
+            showToast("已繪製隔牆！點選隔牆線可直接刪除。");
+        });
+
+        // 取消所有繪圖工具狀態並還原預設
+        function cancelAllDrawingTools() {
+            activeTool = 'select';
+            drawPoints = [];
+            isDrawingRect = false;
+
+            document.querySelectorAll('.temp-draw-node').forEach(el => el.remove());
+            document.querySelectorAll('.temp-draw-line').forEach(el => el.remove());
+            document.getElementById('rectDrawPreview').classList.add('hidden');
+
             const btnDrawWall = document.getElementById('toolDrawWall');
-            btnDrawWall.className = "flex items-center justify-center space-x-2 p-2.5 border border-slate-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50 transition text-sm";
+            const btnDrawRect = document.getElementById('toolDrawRect');
+            const helpText = document.getElementById('drawingHelpText');
+
+            btnDrawWall.className = "flex flex-col items-center justify-center p-2 border border-slate-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50 transition text-xs";
+            btnDrawRect.className = "flex flex-col items-center justify-center p-2 border border-slate-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50 transition text-xs";
+            helpText.textContent = "點擊「繪製隔牆」後，在畫布上連續點選以畫出邊界，雙擊結束。";
             canvas.style.cursor = 'default';
         }
 
         // --- 撤銷、清空與導出設定 ---
         function setupUndoClearButtons() {
-            // 撤銷 (Undo) 按鈕
             document.getElementById('btnUndo').addEventListener('click', () => {
                 restoreHistory();
             });
 
-            // 清空畫布按鈕
             document.getElementById('btnClear').addEventListener('click', () => {
-                if (confirm('確定要清空畫布上所有的佈局元件與線條嗎？')) {
-                    container.innerHTML = '';
-                    svgOverlay.innerHTML = '';
-                    elements = [];
-                    deselectAll();
-                    saveHistory();
-                    showToast("畫布已清空");
-                }
+                showCustomConfirm(
+                    "確定要清空整張畫布嗎？",
+                    "此操作會清空所有隔牆線、文字和置入的活動元件。",
+                    () => {
+                        container.innerHTML = '';
+                        svgOverlay.innerHTML = '';
+                        elements = [];
+                        deselectAll();
+                        saveHistory();
+                        showToast("畫布已清空");
+                    }
+                );
             });
 
-            // 存檔與導出 PNG 按鈕
             document.getElementById('btnExport').addEventListener('click', exportCanvasToImage);
 
-            // 本地儲存按鈕
             document.getElementById('btnSaveLocal').addEventListener('click', () => {
                 saveToLocalStorage();
-                showToast("畫布狀態已成功暫存！下次打開可繼續編輯。");
+                showToast("畫布狀態已成功暫存！下次開啟可繼續編輯。");
             });
         }
 
         // --- 核心導出功能：利用 html2canvas 生成優質 PNG 圖檔 ---
         async function exportCanvasToImage() {
-            deselectAll(); // 導出前必先取消選取框，確保美觀
+            deselectAll(); // 導出前必先取消選取框
 
             const exportModal = document.getElementById('modalExporting');
-            exportModal.classList.remove('hidden'); // 顯示加載畫面
+            exportModal.classList.remove('hidden');
 
             setTimeout(() => {
-                // 將畫布回復為原 100% 比例以便截出高解析度圖形
                 const savedZoom = currentZoom;
                 currentZoom = 1;
                 canvas.style.transform = 'scale(1)';
 
                 html2canvas(canvas, {
                     backgroundColor: '#ffffff',
-                    scale: 2, // 2倍超高像素
+                    scale: 2, // 2倍高解析度
                     useCORS: true,
                     logging: false
                 }).then(renderedCanvas => {
-                    // 還原原本縮放比例
                     currentZoom = savedZoom;
                     canvas.style.transform = `scale(${currentZoom})`;
                     
-                    // 下載
                     const link = document.createElement('a');
                     link.download = `活動平面配置圖_${getFormattedDate()}.png`;
                     link.href = renderedCanvas.toDataURL('image/png');
                     link.click();
 
-                    exportModal.classList.add('hidden'); // 關閉加載
+                    exportModal.classList.add('hidden');
                     showToast("已成功導出高畫質平面圖圖片！");
                 }).catch(err => {
                     exportModal.classList.add('hidden');
@@ -1100,7 +1445,6 @@
             }, 300);
         }
 
-        // 格式化日期格式
         function getFormattedDate() {
             const now = new Date();
             const y = now.getFullYear();
@@ -1119,38 +1463,25 @@
                 elements: elements,
                 svgContent: svgOverlay.innerHTML
             };
-            localStorage.setItem('quick_floorplan_saved', JSON.stringify(dataToSave));
+            localStorage.setItem('quick_floorplan_saved_v3', JSON.stringify(dataToSave));
         }
 
         function loadFromLocalStorage() {
-            const savedData = localStorage.getItem('quick_floorplan_saved');
+            const savedData = localStorage.getItem('quick_floorplan_saved_v3');
             if (savedData) {
                 try {
                     const data = JSON.parse(savedData);
                     
-                    // 設定尺寸
                     canvas.style.width = data.canvasWidth || '800px';
                     canvas.style.height = data.canvasHeight || '600px';
                     document.getElementById('canvasSizePreset').value = `${parseInt(data.canvasWidth)}x${parseInt(data.canvasHeight)}`;
-                    document.getElementById('canvasDimInfo').textContent = `尺寸: ${parseInt(data.canvasWidth)} x ${parseInt(data.canvasHeight)}`;
+                    document.getElementById('canvasDimInfo').textContent = `尺寸: ${parseInt(data.canvasWidth)} x ${parseInt(data.canvasHeight)} (${parseInt(data.canvasWidth)/20}x${parseInt(data.canvasHeight)/20}格)`;
 
-                    // 載入 SVG 隔間線
                     if (data.svgContent) {
                         svgOverlay.innerHTML = data.svgContent;
-                        // 為加載進來的線段重新添加事件監聽
-                        svgOverlay.querySelectorAll('line').forEach(line => {
-                            line.style.cursor = 'pointer';
-                            line.addEventListener('click', (ev) => {
-                                ev.stopPropagation();
-                                if (confirm('確定要刪除這條隔間線嗎？')) {
-                                    line.remove();
-                                    saveHistory();
-                                }
-                            });
-                        });
+                        bindSvgLinesEvents();
                     }
 
-                    // 重建元件
                     if (data.elements && data.elements.length > 0) {
                         data.elements.forEach(item => {
                             recreateHTMLItem(item);
