@@ -41,323 +41,317 @@
 <body class="text-slate-100 min-h-screen flex flex-col overflow-x-hidden select-none">
 
   <!-- 頂部導覽列 -->
-  <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur px-4 sm:px-6 py-4 flex flex-wrap justify-between items-center gap-4 sticky top-0 z-50">
+  <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur px-4 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 sticky top-0 z-30">
     <div class="flex items-center gap-3">
-      <div class="bg-indigo-600 p-2 sm:p-2.5 rounded-lg text-white shadow-lg shadow-indigo-500/20">
-        <i class="fa-solid fa-layer-group text-lg sm:text-xl animate-pulse"></i>
+      <div class="bg-indigo-600 p-2 rounded-lg text-white shadow-lg shadow-indigo-500/20">
+        <i class="fa-solid fa-layer-group text-base sm:text-xl animate-pulse"></i>
       </div>
       <div>
-        <h1 class="text-base sm:text-lg font-bold tracking-wider text-white flex items-center gap-2 flex-wrap">
-          即時舞台視覺系統
-          <span class="text-[10px] sm:text-xs bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 px-2 py-0.5 rounded-full font-normal">PRO</span>
+        <h1 class="text-sm sm:text-base md:text-lg font-bold tracking-wider text-white flex items-center gap-2 flex-wrap">
+          即時現場建構與舞台視覺系統
+          <span class="text-[10px] bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 px-2 py-0.5 rounded-full font-normal">vPRO</span>
         </h1>
-        <p class="text-[10px] sm:text-xs text-slate-400">一鍵切換舞台/打卡視覺牆、無階梯配置佈置溝通專用系統</p>
+        <p class="text-[10px] text-slate-400">行動體驗優化、手動縮合看板、可摺疊面板與白底黑字獨立底欄圖紙匯出系統</p>
       </div>
     </div>
     
-    <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end border-t border-slate-800/60 pt-3 sm:pt-0 sm:border-0">
+    <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end border-t border-slate-800/60 pt-2.5 sm:pt-0 sm:border-0">
       <div class="flex items-center gap-1.5">
-        <label class="text-xs text-slate-400 font-medium hidden md:inline">快速樣版：</label>
-        <select id="presetSelect" class="bg-slate-800 border border-slate-700 text-xs sm:text-sm text-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition cursor-pointer">
+        <select id="presetSelect" class="bg-slate-800 border border-slate-700 text-xs text-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition cursor-pointer">
           <option value="medium">標準中型舞台 (12m x 7m)</option>
           <option value="small">小型發表會舞台 (8m x 5m)</option>
           <option value="large">大型演唱會舞台 (18m x 10m)</option>
           <option value="custom">自訂尺寸數據</option>
         </select>
       </div>
-      <button id="btnExport" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-semibold px-3 sm:px-4 py-1.5 rounded-lg flex items-center gap-1.5 transition duration-200 shadow-md shadow-indigo-600/10">
-        <i class="fa-solid fa-print"></i> 匯出白底黑線圖
+      <button id="btnExport" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition duration-200 shadow-md shadow-indigo-600/10">
+        <i class="fa-solid fa-print"></i> 匯出線圖
       </button>
     </div>
   </header>
 
   <!-- 主區塊 -->
-  <main class="flex-1 flex flex-col lg:flex-row min-h-0">
+  <main class="flex-1 flex flex-col lg:flex-row min-h-0 relative">
     
-    <!-- 左側參數控制面板 (滾動區) -->
-    <section class="w-full lg:w-[420px] bg-slate-900/40 border-r border-slate-800 flex flex-col overflow-y-auto max-h-[50vh] lg:max-h-none">
+    <!-- 行動端面板遮罩 (Overlay) -->
+    <div id="sidebarOverlay" class="fixed inset-0 bg-slate-950/60 z-40 hidden lg:hidden transition-opacity duration-300"></div>
+
+    <!-- 左側參數控制面板 (行動端自動變更為彈出抽屜) -->
+    <section id="sidebarPanel" class="fixed lg:static inset-y-0 left-0 w-[85vw] max-w-[380px] lg:w-[420px] bg-slate-900 lg:bg-slate-900/40 border-r border-slate-800 flex flex-col z-50 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out">
       
+      <!-- 行動端面板標題與關閉按鈕 -->
+      <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950 lg:hidden">
+        <span class="font-bold text-slate-200 flex items-center gap-2 text-sm">
+          <i class="fa-solid fa-sliders text-indigo-500"></i> 控制面板
+        </span>
+        <button id="btnCloseSidebar" class="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
       <!-- 控制頁籤 -->
-      <div class="flex border-b border-slate-800 sticky top-0 bg-slate-900 z-10">
-        <button id="tabBtnDimensions" class="flex-1 py-3 text-xs sm:text-sm font-medium border-b-2 border-indigo-500 text-indigo-400 bg-slate-900/60 transition flex items-center justify-center gap-1.5">
+      <div class="flex border-b border-slate-800 sticky top-0 bg-slate-900 z-10 text-xs sm:text-sm">
+        <button id="tabBtnDimensions" class="flex-1 py-3 font-medium border-b-2 border-indigo-500 text-indigo-400 bg-slate-900/60 transition flex items-center justify-center gap-1.5">
           <i class="fa-solid fa-sliders"></i> 尺寸與結構
         </button>
-        <button id="tabBtnStyle" class="flex-1 py-3 text-xs sm:text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 transition flex items-center justify-center gap-1.5">
+        <button id="tabBtnStyle" class="flex-1 py-3 font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 transition flex items-center justify-center gap-1.5">
           <i class="fa-solid fa-palette"></i> 視覺與備註
         </button>
-        <button id="tabBtnBOM" class="flex-1 py-3 text-xs sm:text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 transition flex items-center justify-center gap-1.5">
-          <i class="fa-solid fa-calculator"></i> 材料預算（參考）
+        <button id="tabBtnBOM" class="flex-1 py-3 font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 transition flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-calculator"></i> 材料預算
         </button>
       </div>
 
-      <!-- 頁籤1: 尺寸與結構用途 -->
-      <div id="tabPanelDimensions" class="p-4 sm:p-6 space-y-6">
+      <!-- 頁籤內容器 (捲動區) -->
+      <div class="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
         
-        <!-- 結構用途設定 -->
-        <div class="bg-slate-800/40 p-3.5 rounded-xl border border-slate-700/50 space-y-3">
-          <label class="block text-xs font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
-            <span class="w-2 h-2 rounded-full bg-indigo-500"></span> 1. 結構用途型式
-          </label>
-          <div class="grid grid-cols-2 gap-2">
-            <button id="btnTypeStage" class="py-2.5 px-3 rounded-lg text-xs font-semibold border transition flex items-center justify-center gap-1.5 bg-indigo-600 border-indigo-500 text-white shadow-md shadow-indigo-600/15">
-              <i class="fa-solid fa-person-chalkboard"></i> 專業舞台系統
-            </button>
-            <button id="btnTypePhotoWall" class="py-2.5 px-3 rounded-lg text-xs font-semibold border border-slate-700 bg-slate-800 text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-1.5">
-              <i class="fa-solid fa-camera"></i> 打卡牆 / 視覺牆
-            </button>
-          </div>
-        </div>
-
-        <!-- 舞台主尺寸 -->
-        <div class="space-y-4">
-          <h3 class="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1.5">
-            <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span> 2. 桁架Truss外框結構尺寸
-          </h3>
+        <!-- 頁籤1: 尺寸與結構用途 -->
+        <div id="tabPanelDimensions" class="space-y-4">
           
-          <!-- 舞台寬度 -->
-          <div>
-            <div class="flex justify-between text-xs sm:text-sm mb-1.5">
-              <label class="text-slate-300 flex items-center gap-1.5">
-                <i class="fa-solid fa-arrows-left-right text-slate-500 w-4 text-center"></i> 總寬度 (W)
-              </label>
-              <span class="text-indigo-400 font-mono font-semibold" id="valStageWidth">12.0 m</span>
-            </div>
-            <input type="range" id="inputStageWidth" min="5" max="24" step="0.5" value="12" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500 py-1">
-            <div class="flex justify-between text-[10px] text-slate-500 px-1 mt-1">
-              <span>5.0 m</span>
-              <span>15.0 m</span>
-              <span>24.0 m</span>
-            </div>
-          </div>
-
-          <!-- 舞台高度 -->
-          <div>
-            <div class="flex justify-between text-xs sm:text-sm mb-1.5">
-              <label class="text-slate-300 flex items-center gap-1.5">
-                <i class="fa-solid fa-arrows-up-down text-slate-500 w-4 text-center"></i> 總高度 (H)
-              </label>
-              <span class="text-indigo-400 font-mono font-semibold" id="valStageHeight">7.0 m</span>
-            </div>
-            <input type="range" id="inputStageHeight" min="4" max="14" step="0.5" value="7" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500 py-1">
-            <div class="flex justify-between text-[10px] text-slate-500 px-1 mt-1">
-              <span>4.0 m</span>
-              <span>9.0 m</span>
-              <span>14.0 m</span>
+          <!-- 手風琴 1: 結構用途型式 -->
+          <div class="border border-slate-800 rounded-xl overflow-hidden bg-slate-800/20">
+            <button class="accordion-trigger w-full px-4 py-3 bg-slate-800/50 hover:bg-slate-800 flex justify-between items-center text-xs font-bold uppercase tracking-wider text-indigo-400 transition" data-target="secType">
+              <span><i class="fa-solid fa-layer-group mr-1.5"></i> 1. 結構用途型式</span>
+              <i class="fa-solid fa-chevron-down transition-transform duration-200 rotate-180"></i>
+            </button>
+            <div id="secType" class="accordion-content p-4 space-y-3">
+              <div class="grid grid-cols-2 gap-2">
+                <button id="btnTypeStage" class="py-2.5 px-3 rounded-lg text-xs font-semibold border transition flex items-center justify-center gap-1.5 bg-indigo-600 border-indigo-500 text-white shadow-md shadow-indigo-600/15">
+                  <i class="fa-solid fa-person-chalkboard"></i> 專業舞台系統
+                </button>
+                <button id="btnTypePhotoWall" class="py-2.5 px-3 rounded-lg text-xs font-semibold border border-slate-700 bg-slate-800 text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-1.5">
+                  <i class="fa-solid fa-camera"></i> 打卡牆 / 視覺牆
+                </button>
+              </div>
             </div>
           </div>
 
-          <!-- 舞台深度 -->
-          <div id="depthContainer">
-            <div class="flex justify-between text-xs sm:text-sm mb-1.5">
-              <label class="text-slate-300 flex items-center gap-1.5">
-                <i class="fa-solid fa-expand text-slate-500 w-4 text-center"></i> 結構總深度 (D)
-              </label>
-              <span class="text-indigo-400 font-mono font-semibold" id="valStageDepth">6.0 m</span>
-            </div>
-            <input type="range" id="inputStageDepth" min="3" max="12" step="0.5" value="6" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500 py-1">
-            <div class="flex justify-between text-[10px] text-slate-500 px-1 mt-1">
-              <span>3.0 m</span>
-              <span>7.5 m</span>
-              <span>12.0 m</span>
-            </div>
-          </div>
-        </div>
+          <!-- 手風琴 2: 桁架外框結構尺寸 -->
+          <div class="border border-slate-800 rounded-xl overflow-hidden bg-slate-800/20">
+            <button class="accordion-trigger w-full px-4 py-3 bg-slate-800/50 hover:bg-slate-800 flex justify-between items-center text-xs font-bold uppercase tracking-wider text-indigo-400 transition" data-target="secStageSize">
+              <span><i class="fa-solid fa-arrows-up-down-left-right mr-1.5"></i> 2. 桁架外框結構尺寸</span>
+              <i class="fa-solid fa-chevron-down transition-transform duration-200 rotate-180"></i>
+            </button>
+            <div id="secStageSize" class="accordion-content p-4 space-y-4">
+              <!-- 舞台寬度 -->
+              <div>
+                <div class="flex justify-between text-xs sm:text-sm mb-1.5">
+                  <label class="text-slate-300 flex items-center gap-1.5">
+                    <i class="fa-solid fa-arrows-left-right text-slate-500 w-4 text-center"></i> 總寬度 (W)
+                  </label>
+                  <span class="text-indigo-400 font-mono font-semibold" id="valStageWidth">12.0 m</span>
+                </div>
+                <input type="range" id="inputStageWidth" min="5" max="24" step="0.5" value="12" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500 py-1">
+              </div>
 
-        <hr class="border-slate-800/80">
+              <!-- 舞台高度 -->
+              <div>
+                <div class="flex justify-between text-xs sm:text-sm mb-1.5">
+                  <label class="text-slate-300 flex items-center gap-1.5">
+                    <i class="fa-solid fa-arrows-up-down text-slate-500 w-4 text-center"></i> 總高度 (H)
+                  </label>
+                  <span class="text-indigo-400 font-mono font-semibold" id="valStageHeight">7.0 m</span>
+                </div>
+                <input type="range" id="inputStageHeight" min="4" max="14" step="0.5" value="7" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500 py-1">
+              </div>
 
-        <!-- 地台與階梯結構 -->
-        <div class="space-y-4" id="deckStructureSection">
-          <h3 class="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1.5">
-            <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span> 3. 舞台平台與階梯設定
-          </h3>
-
-          <!-- 地台高度 -->
-          <div id="deckHeightContainer">
-            <div class="flex justify-between text-xs sm:text-sm mb-1.5">
-              <label class="text-slate-300 flex items-center gap-1.5">
-                <i class="fa-solid fa-cubes text-slate-500 w-4 text-center"></i> 平台面高度 (Sh)
-              </label>
-              <span class="text-indigo-400 font-mono font-semibold" id="valDeckHeight">1.2 m</span>
-            </div>
-            <input type="range" id="inputDeckHeight" min="0.4" max="2.4" step="0.1" value="1.2" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500 py-1">
-            <div class="flex justify-between text-[10px] text-slate-500 px-1 mt-1">
-              <span>0.4 m</span>
-              <span>1.4 m</span>
-              <span>2.4 m</span>
-            </div>
-          </div>
-
-          <!-- 登台階梯開關 -->
-          <div id="stepsToggleContainer" class="flex items-center justify-between bg-slate-800/30 p-3 rounded-lg border border-slate-800">
-            <label class="text-xs sm:text-sm text-slate-300 flex items-center gap-2 cursor-pointer select-none" for="chkShowSteps">
-              <i class="fa-solid fa-stairs text-indigo-400 w-4 text-center"></i> 配置登台階梯
-            </label>
-            <input type="checkbox" id="chkShowSteps" class="w-5 h-5 rounded text-indigo-600 bg-slate-800 border-slate-700 focus:ring-indigo-500 cursor-pointer" checked>
-          </div>
-
-          <!-- 桁架寬度 -->
-          <div>
-            <div class="flex justify-between text-xs sm:text-sm mb-1.5">
-              <label class="text-slate-300 flex items-center gap-1.5">
-                <i class="fa-solid fa-border-all text-slate-500 w-4 text-center"></i> 桁架管徑規格 (Truss)
-              </label>
-              <span class="text-indigo-400 font-mono font-semibold" id="valTrussWidth">40 cm</span>
-            </div>
-            <input type="range" id="inputTrussWidth" min="20" max="60" step="5" value="40" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500 py-1">
-            <div class="flex justify-between text-[10px] text-slate-500 px-1 mt-1">
-              <span>20 cm</span>
-              <span>40 cm</span>
-              <span>60 cm</span>
+              <!-- 舞台深度 -->
+              <div id="depthContainer">
+                <div class="flex justify-between text-xs sm:text-sm mb-1.5">
+                  <label class="text-slate-300 flex items-center gap-1.5">
+                    <i class="fa-solid fa-expand text-slate-500 w-4 text-center"></i> 結構總深度 (D)
+                  </label>
+                  <span class="text-indigo-400 font-mono font-semibold" id="valStageDepth">6.0 m</span>
+                </div>
+                <input type="range" id="inputStageDepth" min="3" max="12" step="0.5" value="6" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500 py-1">
+              </div>
             </div>
           </div>
-        </div>
 
-        <hr class="border-slate-800/80">
+          <!-- 手風琴 3: 舞台平台與階梯設定 -->
+          <div id="deckStructureSection" class="border border-slate-800 rounded-xl overflow-hidden bg-slate-800/20">
+            <button class="accordion-trigger w-full px-4 py-3 bg-slate-800/50 hover:bg-slate-800 flex justify-between items-center text-xs font-bold uppercase tracking-wider text-indigo-400 transition" data-target="secStageDeck">
+              <span><i class="fa-solid fa-layer-group mr-1.5"></i> 3. 舞台平台與階梯設定</span>
+              <i class="fa-solid fa-chevron-down transition-transform duration-200 rotate-180"></i>
+            </button>
+            <div id="secStageDeck" class="accordion-content p-4 space-y-4">
+              <!-- 地台高度 -->
+              <div id="deckHeightContainer">
+                <div class="flex justify-between text-xs sm:text-sm mb-1.5">
+                  <label class="text-slate-300 flex items-center gap-1.5">
+                    <i class="fa-solid fa-cubes text-slate-500 w-4 text-center"></i> 平台面高度 (Sh)
+                  </label>
+                  <span class="text-indigo-400 font-mono font-semibold" id="valDeckHeight">1.2 m</span>
+                </div>
+                <input type="range" id="inputDeckHeight" min="0.4" max="2.4" step="0.1" value="1.2" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500 py-1">
+              </div>
 
-        <!-- 背景配置 -->
-        <div class="space-y-4">
-          <div class="flex items-center justify-between">
-            <h3 class="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1.5">
-              <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span> 4. 牆面 / 畫面配置
-            </h3>
-            <select id="backdropType" class="bg-slate-800 border border-slate-700 text-xs text-indigo-400 rounded-lg px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-              <option value="led">LED 螢幕背景</option>
-              <option value="canvas">輸出帆布背板</option>
-              <option value="none">無背景配置</option>
-            </select>
-          </div>
-
-          <div id="screenControls" class="space-y-4 transition duration-200">
-            <!-- 螢幕寬度 -->
-            <div>
-              <div class="flex justify-between text-xs sm:text-sm mb-1.5">
-                <label id="lblBackdropWidth" class="text-slate-300 flex items-center gap-1.5">
-                  <i class="fa-solid fa-tablet-screen-button text-slate-500 w-4 text-center"></i> 畫面寬度 (Sw)
+              <!-- 安全登台階梯開關 -->
+              <div id="stepsToggleContainer" class="flex items-center justify-between bg-slate-900/40 p-3 rounded-lg border border-slate-800">
+                <label class="text-xs sm:text-sm text-slate-300 flex items-center gap-2 cursor-pointer select-none" for="chkShowSteps">
+                  <i class="fa-solid fa-stairs text-indigo-400 w-4 text-center"></i> 配置登台階梯
                 </label>
-                <span class="text-indigo-400 font-mono font-semibold" id="valScreenWidth">8.0 m</span>
+                <input type="checkbox" id="chkShowSteps" class="w-5 h-5 rounded text-indigo-600 bg-slate-800 border-slate-700 focus:ring-indigo-500 cursor-pointer" checked>
               </div>
-              <input type="range" id="inputScreenWidth" min="3" max="20" step="0.5" value="8" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500 py-1">
-            </div>
 
-            <!-- 螢幕高度 -->
-            <div>
-              <div class="flex justify-between text-xs sm:text-sm mb-1.5">
-                <label id="lblBackdropHeight" class="text-slate-300 flex items-center gap-1.5">
-                  <i class="fa-solid fa-tablet-screen-button rotate-90 text-slate-500 w-4 text-center"></i> 畫面高度 (Sh)
-                </label>
-                <span class="text-indigo-400 font-mono font-semibold" id="valScreenHeight">4.0 m</span>
+              <!-- 桁架管寬 -->
+              <div>
+                <div class="flex justify-between text-xs sm:text-sm mb-1.5">
+                  <label class="text-slate-300 flex items-center gap-1.5">
+                    <i class="fa-solid fa-border-all text-slate-500 w-4 text-center"></i> 桁架規格 (Truss)
+                  </label>
+                  <span class="text-indigo-400 font-mono font-semibold" id="valTrussWidth">40 cm</span>
+                </div>
+                <input type="range" id="inputTrussWidth" min="20" max="60" step="5" value="40" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500 py-1">
               </div>
-              <input type="range" id="inputScreenHeight" min="2" max="10" step="0.5" value="4" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500 py-1">
-            </div>
-
-            <!-- 懸空高度 -->
-            <div id="screenYContainer">
-              <div class="flex justify-between text-xs sm:text-sm mb-1.5">
-                <label id="lblScreenY" class="text-slate-300 flex items-center gap-1.5">
-                  <i class="fa-solid fa-circle-arrow-up text-slate-500 w-4 text-center"></i> 畫面離地高度 (Sy)
-                </label>
-                <span class="text-indigo-400 font-mono font-semibold" id="valScreenY">1.5 m</span>
-              </div>
-              <input type="range" id="inputScreenY" min="0" max="4" step="0.1" value="1.5" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500 py-1">
             </div>
           </div>
+
+          <!-- 手風琴 4: 畫面 / 畫面介質配置 -->
+          <div class="border border-slate-800 rounded-xl overflow-hidden bg-slate-800/20">
+            <button class="accordion-trigger w-full px-4 py-3 bg-slate-800/50 hover:bg-slate-800 flex justify-between items-center text-xs font-bold uppercase tracking-wider text-indigo-400 transition" data-target="secMedia">
+              <span><i class="fa-solid fa-photo-film mr-1.5"></i> 4. 畫面 / 畫面介質配置</span>
+              <i class="fa-solid fa-chevron-down transition-transform duration-200 rotate-180"></i>
+            </button>
+            <div id="secMedia" class="accordion-content p-4 space-y-4">
+              <div class="flex items-center justify-between">
+                <label class="text-xs text-slate-300">中介質型式</label>
+                <select id="backdropType" class="bg-slate-800 border border-slate-700 text-xs text-indigo-400 rounded-lg px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                  <option value="led">LED 螢幕背景</option>
+                  <option value="canvas">輸出帆布背板</option>
+                  <option value="none">無背景配置</option>
+                </select>
+              </div>
+
+              <div id="screenControls" class="space-y-4 transition duration-200">
+                <!-- 螢幕寬度 -->
+                <div>
+                  <div class="flex justify-between text-xs sm:text-sm mb-1.5">
+                    <label id="lblBackdropWidth" class="text-slate-300 flex items-center gap-1.5">
+                      <i class="fa-solid fa-tablet-screen-button text-slate-500 w-4 text-center"></i> 畫面寬度 (Sw)
+                    </label>
+                    <span class="text-indigo-400 font-mono font-semibold" id="valScreenWidth">8.0 m</span>
+                  </div>
+                  <input type="range" id="inputScreenWidth" min="3" max="20" step="0.5" value="8" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500 py-1">
+                </div>
+
+                <!-- 螢幕高度 -->
+                <div>
+                  <div class="flex justify-between text-xs sm:text-sm mb-1.5">
+                    <label id="lblBackdropHeight" class="text-slate-300 flex items-center gap-1.5">
+                      <i class="fa-solid fa-tablet-screen-button rotate-90 text-slate-500 w-4 text-center"></i> 畫面高度 (Sh)
+                    </label>
+                    <span class="text-indigo-400 font-mono font-semibold" id="valScreenHeight">4.0 m</span>
+                  </div>
+                  <input type="range" id="inputScreenHeight" min="2" max="10" step="0.5" value="4" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500 py-1">
+                </div>
+
+                <!-- 懸空高度 -->
+                <div id="screenYContainer">
+                  <div class="flex justify-between text-xs sm:text-sm mb-1.5">
+                    <label id="lblScreenY" class="text-slate-300 flex items-center gap-1.5">
+                      <i class="fa-solid fa-circle-arrow-up text-slate-500 w-4 text-center"></i> 畫面離地高度 (Sy)
+                    </label>
+                    <span class="text-indigo-400 font-mono font-semibold" id="valScreenY">1.5 m</span>
+                  </div>
+                  <input type="range" id="inputScreenY" min="0" max="4" step="0.1" value="1.5" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500 py-1">
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
 
-      </div>
-
-      <!-- 頁籤2: 視覺與備註 -->
-      <div id="tabPanelStyle" class="p-4 sm:p-6 space-y-6 hidden">
-        
-        <!-- 視覺外觀 -->
-        <div class="space-y-4">
-          <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> 配色與元件渲染 (網頁預覽)
-          </h3>
-
-          <!-- 桁架顏色 -->
-          <div>
-            <label class="block text-xs sm:text-sm text-slate-300 mb-1.5">桁架烤漆外觀</label>
-            <div class="grid grid-cols-5 gap-2">
-              <button class="color-swatch ring-2 ring-white h-9 rounded-md bg-slate-400" data-color="#94a3b8" title="太空銀"></button>
-              <button class="color-swatch h-9 rounded-md bg-slate-800 border border-slate-700" data-color="#1e293b" title="霧面黑"></button>
-              <button class="color-swatch h-9 rounded-md bg-amber-500" data-color="#f59e0b" title="工程黃"></button>
-              <button class="color-swatch h-9 rounded-md bg-indigo-500" data-color="#6366f1" title="科技藍"></button>
-              <button class="color-swatch h-9 rounded-md bg-rose-600" data-color="#e11d48" title="活力紅"></button>
-            </div>
-          </div>
-
-          <!-- 螢幕發光色彩 -->
-          <div>
-            <label class="block text-xs sm:text-sm text-slate-300 mb-1.5">背景發光色彩 / 氛圍</label>
-            <div class="grid grid-cols-5 gap-2">
-              <button class="screen-color-swatch ring-2 ring-white h-9 rounded-md bg-blue-950/80 border border-blue-500" data-color="rgba(23, 37, 84, 0.75)" data-border="rgba(59, 130, 246, 0.8)" title="極光藍"></button>
-              <button class="screen-color-swatch h-9 rounded-md bg-violet-950/80 border border-violet-500" data-color="rgba(46, 16, 101, 0.75)" data-border="rgba(139, 92, 246, 0.8)" title="迷幻紫"></button>
-              <button class="screen-color-swatch h-9 rounded-md bg-emerald-950/80 border border-emerald-500" data-color="rgba(2, 44, 34, 0.75)" data-border="rgba(16, 185, 129, 0.8)" title="矩陣綠"></button>
-              <button class="screen-color-swatch h-9 rounded-md bg-slate-900 border border-slate-700" data-color="rgba(15, 23, 42, 0.9)" data-border="rgba(71, 85, 105, 0.8)" title="純深灰"></button>
-              <button class="screen-color-swatch h-9 rounded-md bg-rose-950/80 border border-rose-500" data-color="rgba(67, 12, 30, 0.75)" data-border="rgba(244, 63, 94, 0.8)" title="霓虹紅"></button>
-            </div>
-          </div>
-        </div>
-
-        <hr class="border-slate-800/80">
-
-        <!-- 顯示與細部選項 -->
-        <div class="space-y-4">
-          <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> 細部繪圖與開關
-          </h3>
-
-          <div class="space-y-3">
-            <!-- 顯示尺寸標註 -->
-            <label class="flex items-center justify-between cursor-pointer py-1">
-              <span class="text-xs sm:text-sm text-slate-300">顯示尺寸標註與輔助線</span>
-              <input type="checkbox" id="chkShowDimensions" class="w-5 h-5 rounded text-indigo-600 bg-slate-800 border-slate-700 focus:ring-indigo-500" checked>
-            </label>
-
-            <!-- 顯示工程網格 -->
-            <label class="flex items-center justify-between cursor-pointer py-1">
-              <span class="text-xs sm:text-sm text-slate-300">顯示背景工程網格線</span>
-              <input type="checkbox" id="chkShowGrid" class="w-5 h-5 rounded text-indigo-600 bg-slate-800 border-slate-700 focus:ring-indigo-500" checked>
-            </label>
-
-            <!-- 桁架結構交叉密度 -->
-            <div>
-              <div class="flex justify-between text-xs text-slate-300 mb-1">
-                <span>桁架內支撐斜撐密度</span>
-                <span id="valBraceDensity" class="font-mono text-emerald-400">適中</span>
+        <!-- 頁籤2: 視覺與備註 -->
+        <div id="tabPanelStyle" class="space-y-4 hidden">
+          
+          <!-- 手風琴 5: 配色與元件渲染 -->
+          <div class="border border-slate-800 rounded-xl overflow-hidden bg-slate-800/20">
+            <button class="accordion-trigger w-full px-4 py-3 bg-slate-800/50 hover:bg-slate-800 flex justify-between items-center text-xs font-bold uppercase tracking-wider text-indigo-400 transition" data-target="secColors">
+              <span><i class="fa-solid fa-palette mr-1.5"></i> 樣式配色方案</span>
+              <i class="fa-solid fa-chevron-down transition-transform duration-200 rotate-180"></i>
+            </button>
+            <div id="secColors" class="accordion-content p-4 space-y-4">
+              <!-- 桁架顏色 -->
+              <div>
+                <label class="block text-xs text-slate-300 mb-1.5">桁架烤漆外觀</label>
+                <div class="grid grid-cols-5 gap-2">
+                  <button class="color-swatch ring-2 ring-white h-9 rounded-md bg-slate-400" data-color="#94a3b8" title="太空銀"></button>
+                  <button class="color-swatch h-9 rounded-md bg-slate-800 border border-slate-700" data-color="#1e293b" title="霧面黑"></button>
+                  <button class="color-swatch h-9 rounded-md bg-amber-500" data-color="#f59e0b" title="工程黃"></button>
+                  <button class="color-swatch h-9 rounded-md bg-indigo-500" data-color="#6366f1" title="科技藍"></button>
+                  <button class="color-swatch h-9 rounded-md bg-rose-600" data-color="#e11d48" title="活力紅"></button>
+                </div>
               </div>
-              <input type="range" id="inputBraceDensity" min="1" max="3" step="1" value="2" class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 py-1">
+
+              <!-- 螢幕發光色彩 -->
+              <div>
+                <label class="block text-xs text-slate-300 mb-1.5">背景發光氛圍</label>
+                <div class="grid grid-cols-5 gap-2">
+                  <button class="screen-color-swatch ring-2 ring-white h-9 rounded-md bg-blue-950/80 border border-blue-500" data-color="rgba(23, 37, 84, 0.75)" data-border="rgba(59, 130, 246, 0.8)" title="極光藍"></button>
+                  <button class="screen-color-swatch h-9 rounded-md bg-violet-950/80 border border-violet-500" data-color="rgba(46, 16, 101, 0.75)" data-border="rgba(139, 92, 246, 0.8)" title="迷幻紫"></button>
+                  <button class="screen-color-swatch h-9 rounded-md bg-emerald-950/80 border border-emerald-500" data-color="rgba(2, 44, 34, 0.75)" data-border="rgba(16, 185, 129, 0.8)" title="矩陣綠"></button>
+                  <button class="screen-color-swatch h-9 rounded-md bg-slate-900 border border-slate-700" data-color="rgba(15, 23, 42, 0.9)" data-border="rgba(71, 85, 105, 0.8)" title="純深灰"></button>
+                  <button class="screen-color-swatch h-9 rounded-md bg-rose-950/80 border border-rose-500" data-color="rgba(67, 12, 30, 0.75)" data-border="rgba(244, 63, 94, 0.8)" title="霓虹紅"></button>
+                </div>
+              </div>
             </div>
           </div>
+
+          <!-- 手風琴 6: 細部繪圖與開關 -->
+          <div class="border border-slate-800 rounded-xl overflow-hidden bg-slate-800/20">
+            <button class="accordion-trigger w-full px-4 py-3 bg-slate-800/50 hover:bg-slate-800 flex justify-between items-center text-xs font-bold uppercase tracking-wider text-indigo-400 transition" data-target="secDrawSwitches">
+              <span><i class="fa-solid fa-desktop mr-1.5"></i> 細部繪圖輔助開關</span>
+              <i class="fa-solid fa-chevron-down transition-transform duration-200 rotate-180"></i>
+            </button>
+            <div id="secDrawSwitches" class="accordion-content p-4 space-y-3">
+              <label class="flex items-center justify-between cursor-pointer py-1">
+                <span class="text-xs text-slate-300">顯示尺寸標註與輔助線</span>
+                <input type="checkbox" id="chkShowDimensions" class="w-5 h-5 rounded text-indigo-600 bg-slate-800 border-slate-700 focus:ring-indigo-500" checked>
+              </label>
+
+              <label class="flex items-center justify-between cursor-pointer py-1">
+                <span class="text-xs text-slate-300">顯示背景工程網格線</span>
+                <input type="checkbox" id="chkShowGrid" class="w-5 h-5 rounded text-indigo-600 bg-slate-800 border-slate-700 focus:ring-indigo-500" checked>
+              </label>
+
+              <div>
+                <div class="flex justify-between text-xs text-slate-300 mb-1">
+                  <span>桁架支撐斜撐密度</span>
+                  <span id="valBraceDensity" class="font-mono text-emerald-400">適中</span>
+                </div>
+                <input type="range" id="inputBraceDensity" min="1" max="3" step="1" value="2" class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 py-1">
+              </div>
+            </div>
+          </div>
+
+          <!-- 手風琴 7: 畫面內容與自訂備註 -->
+          <div class="border border-slate-800 rounded-xl overflow-hidden bg-slate-800/20">
+            <button class="accordion-trigger w-full px-4 py-3 bg-slate-800/50 hover:bg-slate-800 flex justify-between items-center text-xs font-bold uppercase tracking-wider text-indigo-400 transition" data-target="secBlueprintNotes">
+              <span><i class="fa-solid fa-file-pen mr-1.5"></i> 施工藍圖備註內容</span>
+              <i class="fa-solid fa-chevron-down transition-transform duration-200 rotate-180"></i>
+            </button>
+            <div id="secBlueprintNotes" class="accordion-content p-4 space-y-4">
+              <div>
+                <label class="block text-xs text-slate-300 mb-1.5">主視覺牆 / 螢幕大標題</label>
+                <input type="text" id="inputScreenText" value="LIVE SHOW" placeholder="例如：新產品發表會" class="w-full bg-slate-800 border border-slate-700 text-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500">
+              </div>
+              <div>
+                <label class="block text-xs text-slate-300 mb-1.5">副標題 / 展會日期資訊</label>
+                <input type="text" id="inputScreenSubtext" value="STAGE VISUALIZER" placeholder="例如：2026.05.21" class="w-full bg-slate-800 border border-slate-700 text-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500">
+              </div>
+              <div>
+                <label class="block text-xs text-slate-300 mb-1.5">現場施工備註與安全指引</label>
+                <textarea id="inputNotes" rows="4" class="w-full bg-slate-800 border border-slate-700 text-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none font-mono" placeholder="輸入設計提醒、線材預留、抗風拉繩等說明..."></textarea>
+              </div>
+            </div>
+          </div>
+
         </div>
 
-        <hr class="border-slate-800/80">
-
-        <!-- 文字覆蓋與工程備註 -->
-        <div class="space-y-4">
-          <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> 畫面內容與工程備註 (將輸出於圖面)
-          </h3>
-          <div>
-            <label class="block text-xs sm:text-sm text-slate-300 mb-1.5">主視覺牆 / 螢幕大標題</label>
-            <input type="text" id="inputScreenText" value="LIVE SHOW" placeholder="例如：年度論壇主視覺" class="w-full bg-slate-800 border border-slate-700 text-slate-200 rounded-lg px-3 py-2 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
-          </div>
-          <div>
-            <label class="block text-xs sm:text-sm text-slate-300 mb-1.5">副標題 / 展會日期資訊</label>
-            <input type="text" id="inputScreenSubtext" value="STAGE VISUALIZER" placeholder="例如：2026.05.21" class="w-full bg-slate-800 border border-slate-700 text-slate-200 rounded-lg px-3 py-2 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
-          </div>
-          <div>
-            <label class="block text-xs sm:text-sm text-slate-300 mb-1.5">現場施工備註與安全指引</label>
-            <textarea id="inputNotes" rows="4" class="w-full bg-slate-800 border border-slate-700 text-slate-200 rounded-lg px-3 py-2 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none font-mono" placeholder="輸入此工程的細部設計提醒、線材預留、備用發電機或抗風拉繩等說明..."></textarea>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- 頁籤3: 材料估算 -->
-      <div id="tabPanelBOM" class="p-4 sm:p-6 space-y-6 hidden">
-        
-        <div class="space-y-4">
+        <!-- 頁籤3: 材料估算 -->
+        <div id="tabPanelBOM" class="space-y-4 hidden">
+          
           <div class="flex items-center justify-between">
             <h3 class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
               <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> 結構材料預估明細 (自動計算)
@@ -374,8 +368,8 @@
                 <span class="font-bold text-slate-200">2米 直型鋁合金桁架</span>
                 <p class="text-[10px] text-slate-400">主要立柱、橫樑與支撐組件</p>
               </div>
-              <div class="flex items-center gap-2 sm:gap-4 shrink-0">
-                <span class="font-mono text-amber-400 font-semibold text-xs sm:text-sm" id="bomTruss2m">0 支</span>
+              <div class="flex items-center gap-4 shrink-0">
+                <span class="font-mono text-amber-400 font-semibold text-xs" id="bomTruss2m">0 支</span>
                 <input type="number" id="priceTruss2m" value="1200" class="w-14 bg-slate-800 text-right px-1 py-0.5 rounded border border-slate-700 text-slate-300 font-mono text-[10px]" title="單價 (元)">
               </div>
             </div>
@@ -386,8 +380,8 @@
                 <span class="font-bold text-slate-200">1米 直型鋁合金桁架</span>
                 <p class="text-[10px] text-slate-400">高度與寬度尺寸微調件</p>
               </div>
-              <div class="flex items-center gap-2 sm:gap-4 shrink-0">
-                <span class="font-mono text-amber-400 font-semibold text-xs sm:text-sm" id="bomTruss1m">0 支</span>
+              <div class="flex items-center gap-4 shrink-0">
+                <span class="font-mono text-amber-400 font-semibold text-xs" id="bomTruss1m">0 支</span>
                 <input type="number" id="priceTruss1m" value="800" class="w-14 bg-slate-800 text-right px-1 py-0.5 rounded border border-slate-700 text-slate-300 font-mono text-[10px]" title="單價 (元)">
               </div>
             </div>
@@ -398,8 +392,8 @@
                 <span class="font-bold text-slate-200">六向桁架轉角箱 (Corner)</span>
                 <p class="text-[10px] text-slate-400">頂部兩側直角連結器</p>
               </div>
-              <div class="flex items-center gap-2 sm:gap-4 shrink-0">
-                <span class="font-mono text-amber-400 font-semibold text-xs sm:text-sm" id="bomCorners">2 個</span>
+              <div class="flex items-center gap-4 shrink-0">
+                <span class="font-mono text-amber-400 font-semibold text-xs" id="bomCorners">2 個</span>
                 <input type="number" id="priceCorner" value="1500" class="w-14 bg-slate-800 text-right px-1 py-0.5 rounded border border-slate-700 text-slate-300 font-mono text-[10px]" title="單價 (元)">
               </div>
             </div>
@@ -410,8 +404,8 @@
                 <span class="font-bold text-slate-200">重型鋼製配重底座 (Base)</span>
                 <p class="text-[10px] text-slate-400">地端立柱支撐與基礎配重</p>
               </div>
-              <div class="flex items-center gap-2 sm:gap-4 shrink-0">
-                <span class="font-mono text-amber-400 font-semibold text-xs sm:text-sm" id="bomBases">2 個</span>
+              <div class="flex items-center gap-4 shrink-0">
+                <span class="font-mono text-amber-400 font-semibold text-xs" id="bomBases">2 個</span>
                 <input type="number" id="priceBase" value="1000" class="w-14 bg-slate-800 text-right px-1 py-0.5 rounded border border-slate-700 text-slate-300 font-mono text-[10px]" title="單價 (元)">
               </div>
             </div>
@@ -422,8 +416,8 @@
                 <span class="font-bold text-slate-200" id="bomDynamicItemName">舞台防滑板 (1x2米)</span>
                 <p class="text-[10px] text-slate-400" id="bomDynamicItemDesc">拼裝組合式高載重地台</p>
               </div>
-              <div class="flex items-center gap-2 sm:gap-4 shrink-0">
-                <span class="font-mono text-amber-400 font-semibold text-xs sm:text-sm" id="bomDecks">0 片</span>
+              <div class="flex items-center gap-4 shrink-0">
+                <span class="font-mono text-amber-400 font-semibold text-xs" id="bomDecks">0 片</span>
                 <input type="number" id="priceDeck" value="1600" class="w-14 bg-slate-800 text-right px-1 py-0.5 rounded border border-slate-700 text-slate-300 font-mono text-[10px]" title="單價 (元)">
               </div>
             </div>
@@ -434,8 +428,8 @@
                 <span class="font-bold text-slate-200">安全上台階梯</span>
                 <p class="text-[10px] text-slate-400">舞台專用左右登台梯</p>
               </div>
-              <div class="flex items-center gap-2 sm:gap-4 shrink-0">
-                <span class="font-mono text-amber-400 font-semibold text-xs sm:text-sm" id="bomSteps">0 組</span>
+              <div class="flex items-center gap-4 shrink-0">
+                <span class="font-mono text-amber-400 font-semibold text-xs" id="bomSteps">0 組</span>
                 <input type="number" id="priceStep" value="2500" class="w-14 bg-slate-800 text-right px-1 py-0.5 rounded border border-slate-700 text-slate-300 font-mono text-[10px]" title="單價 (元)">
               </div>
             </div>
@@ -447,19 +441,20 @@
             
             <div class="grid grid-cols-2 gap-3 text-xs">
               <div class="bg-slate-900/60 p-2.5 rounded border border-slate-800">
-                <span class="text-slate-400 block mb-0.5 text-[10px] sm:text-xs font-medium">預估硬體預算 (租賃)</span>
-                <span class="font-mono text-xs sm:text-sm text-emerald-400 font-bold" id="bomTotalPrice">NT$ 0</span>
+                <span class="text-slate-400 block mb-0.5 text-[10px] font-medium">預估硬體預算 (租賃)</span>
+                <span class="font-mono text-xs text-emerald-400 font-bold" id="bomTotalPrice">NT$ 0</span>
               </div>
               <div class="bg-slate-900/60 p-2.5 rounded border border-slate-800">
-                <span class="text-slate-400 block mb-0.5 text-[10px] sm:text-xs font-medium">預估搭設時間</span>
-                <span class="font-mono text-xs sm:text-sm text-indigo-400 font-bold" id="bomSetupTime">0.0 hr</span>
+                <span class="text-slate-400 block mb-0.5 text-[10px] font-medium">預估搭設時間</span>
+                <span class="font-mono text-xs text-indigo-400 font-bold" id="bomSetupTime">0.0 hr</span>
               </div>
             </div>
             
             <p class="text-[10px] text-slate-500 leading-relaxed italic">
-              *此材料清單估算為依據 3D 結構之基礎骨架預估。實際執行需考量燈光吊掛、馬達承重、配電、大圖輸出施工、背板結構拉繩及專業施工人員搬運費用。
+              *此材料清單估算為依據 3D 結構之基礎骨架預估。實際執行需考量現場負載、大圖帆布輸出、背板防傾斜支撐結構拉線與吊裝工資。
             </p>
           </div>
+
         </div>
 
       </div>
@@ -470,25 +465,25 @@
     <section class="flex-1 bg-slate-950 flex flex-col relative min-h-[350px] lg:min-h-0">
       
       <!-- 畫布上方控制條 -->
-      <div class="px-4 sm:px-6 py-3 border-b border-slate-800 bg-slate-900/40 flex flex-wrap justify-between items-center gap-3 z-10">
+      <div class="px-4 sm:px-6 py-2.5 border-b border-slate-800 bg-slate-900/40 flex justify-between items-center gap-3 z-10">
         <div class="flex items-center gap-2">
           <!-- 視角切換器 -->
           <span class="text-xs text-slate-400 font-medium hidden xs:inline">觀看視角：</span>
           <div class="inline-flex rounded-lg p-0.5 bg-slate-800 border border-slate-700">
-            <button id="btnViewFront" class="px-2.5 sm:px-3 py-1 text-[11px] sm:text-xs font-medium rounded-md bg-indigo-600 text-white transition flex items-center gap-1">
-              <i class="fa-solid fa-square-poll-vertical text-[10px]"></i> 2D 正視圖
+            <button id="btnViewFront" class="px-2.5 py-1 text-[11px] sm:text-xs font-medium rounded-md bg-indigo-600 text-white transition flex items-center gap-1">
+              <i class="fa-solid fa-square-poll-vertical text-[10px]"></i> 2D 正視
             </button>
-            <button id="btnViewIso" class="px-2.5 sm:px-3 py-1 text-[11px] sm:text-xs font-medium rounded-md text-slate-400 hover:text-slate-200 transition flex items-center gap-1">
-              <i class="fa-solid fa-cube text-[10px]"></i> 3D 立體圖
+            <button id="btnViewIso" class="px-2.5 py-1 text-[11px] sm:text-xs font-medium rounded-md text-slate-400 hover:text-slate-200 transition flex items-center gap-1">
+              <i class="fa-solid fa-cube text-[10px]"></i> 3D 立體
             </button>
           </div>
         </div>
 
-        <div class="flex items-center gap-3 sm:gap-4">
+        <div class="flex items-center gap-2 sm:gap-3">
           <!-- 縮放及復位 -->
-          <button id="btnZoomIn" class="text-slate-400 hover:text-slate-200 p-1 transition" title="放大縮放"><i class="fa-solid fa-magnifying-glass-plus text-sm"></i></button>
-          <button id="btnZoomOut" class="text-slate-400 hover:text-slate-200 p-1 transition" title="縮小縮放"><i class="fa-solid fa-magnifying-glass-minus text-sm"></i></button>
-          <button id="btnResetView" class="text-[11px] bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-2 py-1 rounded transition flex items-center gap-1">
+          <button id="btnZoomIn" class="text-slate-400 hover:text-slate-200 p-1 transition" title="放大"><i class="fa-solid fa-magnifying-glass-plus text-sm sm:text-base"></i></button>
+          <button id="btnZoomOut" class="text-slate-400 hover:text-slate-200 p-1 transition" title="縮小"><i class="fa-solid fa-magnifying-glass-minus text-sm sm:text-base"></i></button>
+          <button id="btnResetView" class="text-[10px] sm:text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-2 py-1 rounded transition flex items-center gap-1">
             <i class="fa-solid fa-arrows-to-eye"></i> 視角重設
           </button>
         </div>
@@ -496,23 +491,33 @@
 
       <!-- Canvas 容器 (自動填滿) -->
       <div class="flex-1 relative overflow-hidden" id="canvasContainer">
-        <!-- 即時提示浮窗 -->
-        <div class="absolute top-3 left-3 sm:top-4 sm:left-4 bg-slate-900/95 border border-slate-800/80 p-3 sm:p-4 rounded-xl shadow-2xl backdrop-blur-md z-10 pointer-events-none text-xs sm:text-sm space-y-1.5 max-w-[240px] sm:max-w-[280px]">
-          <span class="text-indigo-400 block font-bold tracking-wide text-sm sm:text-base">📐 場地與結構資訊</span>
-          <div class="flex justify-between font-mono"><span class="text-slate-500">結構用途:</span><span class="text-indigo-400 font-semibold" id="infoStructureType">舞台模式</span></div>
-          <div class="flex justify-between font-mono"><span class="text-slate-500">外部寬高:</span><span class="text-slate-200 font-semibold" id="infoStageDim">12.0 x 7.0 m</span></div>
-          <div class="flex justify-between font-mono" id="infoDeckRow"><span class="text-slate-500">舞台地台:</span><span class="text-slate-200 font-semibold" id="infoDeckDim">12.0 x 6.0 x 1.2 m</span></div>
-          <div class="flex justify-between font-mono"><span class="text-slate-500">畫面類型:</span><span class="text-emerald-400 font-semibold" id="infoBackdropType">LED 螢幕</span></div>
-          <div class="flex justify-between font-mono"><span class="text-slate-500">畫面尺寸:</span><span class="text-slate-200 font-semibold" id="infoScreenDim">8.0 x 4.0 m</span></div>
-          <div class="flex justify-between font-mono"><span class="text-slate-500">桁架規格:</span><span class="text-slate-200 font-semibold" id="infoTrussDim">40 cm (方型)</span></div>
+        
+        <!-- 即時提示浮窗 (新增可手動摺疊功能，防小螢幕遮擋) -->
+        <div id="hudCard" class="absolute top-3 left-3 sm:top-4 sm:left-4 bg-slate-900/95 border border-slate-800/80 p-3 rounded-xl shadow-2xl backdrop-blur-md z-10 text-xs sm:text-sm w-[230px] sm:w-[270px] transition-all duration-300">
+          <div class="flex justify-between items-center cursor-pointer select-none" id="hudHeader" title="點擊收合/展開場地資訊">
+            <span class="text-indigo-400 font-bold tracking-wide flex items-center gap-1.5">
+              <i class="fa-solid fa-chart-simple"></i> 📐 場地與結構資訊
+            </span>
+            <button class="text-slate-400 hover:text-white transition-transform duration-200" id="btnToggleHUD">
+              <i class="fa-solid fa-chevron-up transition-transform duration-300 rotate-180" id="hudChevron"></i>
+            </button>
+          </div>
+          <div id="hudContent" class="space-y-1.5 mt-2 transition-all duration-300 origin-top overflow-hidden hidden">
+            <div class="flex justify-between font-mono"><span class="text-slate-500">結構用途:</span><span class="text-indigo-400 font-semibold" id="infoStructureType">舞台模式</span></div>
+            <div class="flex justify-between font-mono"><span class="text-slate-500">外部寬高:</span><span class="text-slate-200 font-semibold" id="infoStageDim">12.0 x 7.0 m</span></div>
+            <div class="flex justify-between font-mono" id="infoDeckRow"><span class="text-slate-500">舞台地台:</span><span class="text-slate-200 font-semibold" id="infoDeckDim">12.0 x 6.0 x 1.2 m</span></div>
+            <div class="flex justify-between font-mono"><span class="text-slate-500">畫面類型:</span><span class="text-emerald-400 font-semibold" id="infoBackdropType">LED 螢幕</span></div>
+            <div class="flex justify-between font-mono"><span class="text-slate-500">畫面尺寸:</span><span class="text-slate-200 font-semibold" id="infoScreenDim">8.0 x 4.0 m</span></div>
+            <div class="flex justify-between font-mono"><span class="text-slate-500">桁架規格:</span><span class="text-slate-200 font-semibold" id="infoTrussDim">40 cm (方型)</span></div>
+          </div>
         </div>
 
         <!-- 水印/指南 -->
         <div class="absolute bottom-3 left-3 sm:bottom-4 sm:left-4 text-[9px] sm:text-[10px] text-slate-500 pointer-events-none z-10 select-none leading-relaxed bg-slate-950/40 p-2 rounded-lg backdrop-blur-[2px]">
-          拖曳 / 手勢操作指南：<br>
-          • 2D 模式：滑鼠或觸控直接「垂直拖曳」背景畫面以調整離地高度 Sy<br>
-          • 3D 模式：在畫面上按住並任意方向滑動，即可 360 度觀測立體結構與斜撐架設<br>
-          • 滾輪 / 雙指捏合：可無段進行整個系統的畫面縮放
+          操作指南：<br>
+          • 2D 模式：滑動或觸控「垂直拖曳」背景螢幕調整離地高度 Sy<br>
+          • 3D 模式：按住螢幕任意方向滑動，即可 360 度觀測立體骨架<br>
+          • 滾輪 / 雙指捏合：可無段進行畫面縮放
         </div>
 
         <!-- 主 Canvas -->
@@ -520,17 +525,22 @@
       </div>
 
       <!-- 底部狀態條 -->
-      <footer class="px-4 sm:px-6 py-2 border-t border-slate-800 bg-slate-900/60 flex justify-between items-center text-[10px] sm:text-xs text-slate-400">
+      <footer class="px-4 sm:px-6 py-2 border-t border-slate-800 bg-slate-900/60 flex justify-between items-center text-[10px] text-slate-400">
         <div class="flex items-center gap-4">
           <span class="flex items-center gap-1"><i class="fa-solid fa-chart-area"></i> 全比例實時尺標註系統</span>
           <span class="hidden md:inline border-l border-slate-800 pl-4 text-emerald-500 flex items-center gap-1">
-            <i class="fa-solid fa-circle-check"></i> 安全係數計算正常 (符合工程防風拉力法規)
+            <i class="fa-solid fa-circle-check"></i> 安全係數計算正常 (符合結構防風拉力法規)
           </span>
         </div>
-        <div id="mouseCoords" class="font-mono text-[10px] sm:text-[12px] text-slate-500">
-          滑鼠位置: X: 0.00m, Y: 0.00m
+        <div id="mouseCoords" class="font-mono text-[9px] sm:text-[11px] text-slate-500">
+          位置: X: 0.00m, Y: 0.00m
         </div>
       </footer>
+
+      <!-- 行動端懸浮參數開啟按鈕 (僅在手機/平板顯示) -->
+      <button id="btnToggleSidebar" class="lg:hidden fixed bottom-6 right-6 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-3 rounded-full shadow-2xl shadow-indigo-600/30 z-40 flex items-center gap-1.5 font-bold transition duration-200 active:scale-95">
+        <i class="fa-solid fa-sliders"></i> <span class="text-xs">參數控制</span>
+      </button>
 
     </section>
 
@@ -558,22 +568,21 @@
     // 1. 初始化全域狀態與變數
     // ----------------------------------------------------
     const state = {
-      // 結構用途型式: 'stage' (專業舞台) 或 'photowall' (打卡牆/視覺牆)
       structureType: 'stage', 
-      showSteps: true,       // 是否配置登台階梯
+      showSteps: true,       // 配置階梯
 
       // 舞台數據
-      stageWidth: 12.0,   // 米 (m)
-      stageHeight: 7.0,   // 米 (m)
-      stageDepth: 6.0,    // 米 (m)
-      deckHeight: 1.2,    // 米 (m)
-      trussWidth: 0.4,    // 米 (m)
+      stageWidth: 12.0,   
+      stageHeight: 7.0,   
+      stageDepth: 6.0,    
+      deckHeight: 1.2,    
+      trussWidth: 0.4,    
       
       // 背景/背板數據
-      backdropType: 'led', // 'led' / 'canvas' / 'none'
-      screenWidth: 8.0,   // 米 (m)
-      screenHeight: 4.0,  // 米 (m)
-      screenY: 1.5,       // 離地高度 (m)，此為螢幕下緣距離地面的高度
+      backdropType: 'led', 
+      screenWidth: 8.0,   
+      screenHeight: 4.0,  
+      screenY: 1.5,       
 
       // 視覺樣式
       trussColor: '#94a3b8',
@@ -582,24 +591,23 @@
       screenText: 'LIVE SHOW',
       screenSubtext: 'STAGE VISUALIZER',
       designNotes: '1. 本結構建議搭設於平整堅實、無積水地面。\n2. 帆布背板若遇 6 級以上強風建議卸下，以防風阻傾覆。\n3. 所有大功率配電與燈光、音響控制需符合一級防雨配線標準。',
-      braceDensity: 2, // 1: 稀疏, 2: 中, 3: 密
+      braceDensity: 2, 
       showDimensions: true,
       showGrid: true,
 
       // 視角與變形操作
-      viewMode: 'front', // 'front' (2D) 或 'iso' (3D)
+      viewMode: 'front', 
       zoom: 1.0,
       panX: 0,
       panY: 0,
 
       // 3D 視角旋轉角度
-      isoRotationX: -20 * Math.PI / 180, // 上下傾角
-      isoRotationY: 45 * Math.PI / 180,  // 左右偏角
+      isoRotationX: -20 * Math.PI / 180, 
+      isoRotationY: 45 * Math.PI / 180,  
 
-      // 拖曳與觸控狀態
       isDragging: false,
       dragStart: { x: 0, y: 0 },
-      draggedTarget: null, // 'screen', 'pan', 'rotate3d'
+      draggedTarget: null, 
       screenBoundingBox: null
     };
 
@@ -640,17 +648,15 @@
       }
     };
 
-    // 材料單價配置 (新台幣元/每日)
     const prices = {
       truss2m: 1200,
       truss1m: 800,
       corner: 1500,
       base: 1000,
-      deck: 1600, // 舞台板或打卡牆後方支撐架單價
+      deck: 1600, 
       step: 2500
     };
 
-    // 獲取 DOM 節點
     const canvas = document.getElementById('stageCanvas');
     const ctx = canvas.getContext('2d');
     const canvasContainer = document.getElementById('canvasContainer');
@@ -682,26 +688,81 @@
         });
       });
 
-      // 結構用途切換按鈕事件
+      // 行動端抽屜開關邏輯
+      const sidebarPanel = document.getElementById('sidebarPanel');
+      const sidebarOverlay = document.getElementById('sidebarOverlay');
+      const btnToggleSidebar = document.getElementById('btnToggleSidebar');
+      const btnCloseSidebar = document.getElementById('btnCloseSidebar');
+
+      function openMobileSidebar() {
+        sidebarPanel.classList.remove('-translate-x-full');
+        sidebarOverlay.classList.remove('hidden');
+      }
+
+      function closeMobileSidebar() {
+        sidebarPanel.classList.add('-translate-x-full');
+        sidebarOverlay.classList.add('hidden');
+      }
+
+      btnToggleSidebar.addEventListener('click', openMobileSidebar);
+      btnCloseSidebar.addEventListener('click', closeMobileSidebar);
+      sidebarOverlay.addEventListener('click', closeMobileSidebar);
+
+      // 手風琴收合控制
+      document.querySelectorAll('.accordion-trigger').forEach(trigger => {
+        trigger.addEventListener('click', () => {
+          const targetId = trigger.getAttribute('data-target');
+          const targetContent = document.getElementById(targetId);
+          const icon = trigger.querySelector('.fa-chevron-down');
+          
+          if (targetContent.classList.contains('hidden')) {
+            targetContent.classList.remove('hidden');
+            icon.classList.add('rotate-180');
+          } else {
+            targetContent.classList.add('hidden');
+            icon.classList.remove('rotate-180');
+          }
+        });
+      });
+
+      // HUD 資訊面板縮合/展開
+      const hudHeader = document.getElementById('hudHeader');
+      const hudContent = document.getElementById('hudContent');
+      const hudChevron = document.getElementById('hudChevron');
+      
+      // 行動端預設將其收合以釋放螢幕
+      if (window.innerWidth < 1024) {
+        hudContent.classList.add('hidden');
+        hudChevron.classList.remove('rotate-180');
+      } else {
+        hudContent.classList.remove('hidden');
+        hudChevron.classList.add('rotate-180');
+      }
+
+      hudHeader.addEventListener('click', () => {
+        const isCollapsed = hudContent.classList.contains('hidden');
+        if (isCollapsed) {
+          hudContent.classList.remove('hidden');
+          hudChevron.classList.add('rotate-180');
+        } else {
+          hudContent.classList.add('hidden');
+          hudChevron.classList.remove('rotate-180');
+        }
+      });
+
+      // 結構用途切換
       const btnTypeStage = document.getElementById('btnTypeStage');
       const btnTypePhotoWall = document.getElementById('btnTypePhotoWall');
-      
       const deckHeightContainer = document.getElementById('deckHeightContainer');
       const stepsToggleContainer = document.getElementById('stepsToggleContainer');
       const depthContainer = document.getElementById('depthContainer');
 
-      btnTypeStage.addEventListener('click', () => {
-        setStructureType('stage');
-      });
-
-      btnTypePhotoWall.addEventListener('click', () => {
-        setStructureType('photowall');
-      });
+      btnTypeStage.addEventListener('click', () => setStructureType('stage'));
+      btnTypePhotoWall.addEventListener('click', () => setStructureType('photowall'));
 
       function setStructureType(type) {
         state.structureType = type;
         if (type === 'stage') {
-          // 啟用舞台
           btnTypeStage.className = "py-2.5 px-3 rounded-lg text-xs font-semibold border transition flex items-center justify-center gap-1.5 bg-indigo-600 border-indigo-500 text-white shadow-md shadow-indigo-600/15";
           btnTypePhotoWall.className = "py-2.5 px-3 rounded-lg text-xs font-semibold border border-slate-700 bg-slate-800 text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-1.5";
           
@@ -709,16 +770,12 @@
           stepsToggleContainer.classList.remove('hidden');
           depthContainer.classList.remove('hidden');
 
-          // 復原原本數值
-          const deckVal = parseFloat(document.getElementById('inputDeckHeight').value);
-          state.deckHeight = deckVal;
+          state.deckHeight = parseFloat(document.getElementById('inputDeckHeight').value);
 
-          // 重新整理 BOM 欄位標籤
           document.getElementById('bomDynamicItemName').innerText = "舞台防滑板 (1x2米)";
           document.getElementById('bomDynamicItemDesc').innerText = "拼裝組合式高載重地台";
           document.getElementById('bomStepRow').classList.remove('hidden');
         } else {
-          // 啟用打卡牆面
           btnTypePhotoWall.className = "py-2.5 px-3 rounded-lg text-xs font-semibold border transition flex items-center justify-center gap-1.5 bg-indigo-600 border-indigo-500 text-white shadow-md shadow-indigo-600/15";
           btnTypeStage.className = "py-2.5 px-3 rounded-lg text-xs font-semibold border border-slate-700 bg-slate-800 text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-1.5";
           
@@ -726,17 +783,14 @@
           stepsToggleContainer.classList.add('hidden');
           depthContainer.classList.add('hidden');
 
-          // 打卡牆底座踢腳板固定為 0.1m
           state.deckHeight = 0.1;
           
-          // 若畫面離地高低於踢腳，強制貼齊底座 0.1m
           if (state.screenY < 0.1) {
             state.screenY = 0.1;
             document.getElementById('inputScreenY').value = 0.1;
             document.getElementById('valScreenY').innerText = "0.1 m";
           }
 
-          // 重新整理 BOM 欄位標籤
           document.getElementById('bomDynamicItemName').innerText = "A字防風後斜撐";
           document.getElementById('bomDynamicItemDesc').innerText = "打卡視覺牆專用防傾倒支撑架";
           document.getElementById('bomStepRow').classList.add('hidden');
@@ -774,8 +828,8 @@
             lblBackdropWidth.innerHTML = '<i class="fa-solid fa-scroll text-slate-500 w-4 text-center"></i> 帆布寬度 (Sw)';
             lblBackdropHeight.innerHTML = '<i class="fa-solid fa-scroll rotate-90 text-slate-500 w-4 text-center"></i> 帆布高度 (Sh)';
           } else {
-            lblBackdropWidth.innerHTML = '<i class="fa-solid fa-tablet-screen-button text-slate-500 w-4 text-center"></i> 螢幕寬度 (Sw)';
-            lblBackdropHeight.innerHTML = '<i class="fa-solid fa-tablet-screen-button rotate-90 text-slate-500 w-4 text-center"></i> 螢幕高度 (Sh)';
+            lblBackdropWidth.innerHTML = '<i class="fa-solid fa-tablet-screen-button text-slate-500 w-4 text-center"></i> 畫面寬度 (Sw)';
+            lblBackdropHeight.innerHTML = '<i class="fa-solid fa-tablet-screen-button rotate-90 text-slate-500 w-4 text-center"></i> 畫面高度 (Sh)';
           }
         }
         updateVisualization();
@@ -841,7 +895,7 @@
         updateVisualization();
       });
 
-      // 自訂工程備註欄位
+      // 自訂工程備註
       const inputNotes = document.getElementById('inputNotes');
       inputNotes.value = state.designNotes;
       inputNotes.addEventListener('input', (e) => {
@@ -849,7 +903,7 @@
         updateVisualization();
       });
 
-      // 視角切換按鈕
+      // 視角切換
       const btnViewFront = document.getElementById('btnViewFront');
       const btnViewIso = document.getElementById('btnViewIso');
 
@@ -924,12 +978,12 @@
         exportAsBlueprintImage();
       });
 
-      // 畫布 RWD 自動監聽
+      // 畫布 RWD 監聽
       window.addEventListener('resize', () => {
         resizeCanvas();
       });
 
-      // 手勢縮放 (雙指) 支援
+      // 手勢縮放支援
       let initialDist = 0;
       canvas.addEventListener('touchmove', (e) => {
         if (e.touches.length === 2) {
@@ -952,7 +1006,6 @@
       });
     }
 
-    // 綁定滑桿數值輔助函數
     function bindInputRange(inputId, valId, stateKey, unit, divisor = 1) {
       const input = document.getElementById(inputId);
       const output = document.getElementById(valId);
@@ -961,7 +1014,6 @@
         state[stateKey] = val / divisor;
         output.innerText = `${val} ${unit}`;
         
-        // 防穿牆安全連鎖
         if (stateKey === 'stageWidth') {
           const maxScrWidth = Math.max(3, val - 1.0);
           const scrInput = document.getElementById('inputScreenWidth');
@@ -992,7 +1044,6 @@
       state.stageWidth = p.stageWidth;
       state.stageHeight = p.stageHeight;
       state.stageDepth = p.stageDepth;
-      // 依據目前型式決定地台高度
       if (state.structureType === 'stage') {
         state.deckHeight = p.deckHeight;
       } else {
@@ -1004,7 +1055,6 @@
       state.screenHeight = p.screenHeight;
       state.screenY = state.structureType === 'stage' ? p.screenY : Math.max(0.1, p.screenY);
 
-      // 同步 UI 畫面
       document.getElementById('inputStageWidth').value = p.stageWidth;
       document.getElementById('valStageWidth').innerText = `${p.stageWidth} m`;
       document.getElementById('inputStageHeight').value = p.stageHeight;
@@ -1046,7 +1096,6 @@
       updateVisualization();
     }
 
-    // 彈出式對話視窗
     function showNotification(msg, type = 'success') {
       const modal = document.getElementById('messageModal');
       const icon = document.getElementById('modalIcon');
@@ -1085,7 +1134,7 @@
     });
 
     // ----------------------------------------------------
-    // 3. BOM 材料列表自動計算 (含舞台、打卡牆、無階梯動態分支)
+    // 3. BOM 材料列表自動計算 (舞台、打卡牆分流)
     // ----------------------------------------------------
     function calculateBOM() {
       const w = state.stageWidth;
@@ -1120,24 +1169,19 @@
       let countSteps = 0;
 
       if (state.structureType === 'stage') {
-        // 舞台模式：使用舞台面板，面積 = 舞台面寬 * 舞台深度
         const area = w * state.stageDepth;
-        countDecks = Math.ceil(area / 2); // 每片為 1x2 米，因此除以 2
+        countDecks = Math.ceil(area / 2); 
 
-        // 階梯數量：若啟用且地台夠高
         if (state.showSteps) {
           countSteps = state.deckHeight >= 1.2 ? 2 : 1;
         } else {
           countSteps = 0;
         }
       } else {
-        // 打卡牆模式：不需要舞台面板與階梯。
-        // 取而代之的是，每2米橫向寬度配置1組後方「斜撐防風支撐架」
         countDecks = Math.max(2, Math.round(w / 2) + 1);
         countSteps = 0;
       }
 
-      // 更新 DOM
       document.getElementById('bomTruss2m').innerText = `${count2m} 支`;
       document.getElementById('bomTruss1m').innerText = `${count1m} 支`;
       document.getElementById('bomCorners').innerText = `${countCorners} 個`;
@@ -1145,7 +1189,6 @@
       document.getElementById('bomDecks').innerText = state.structureType === 'stage' ? `${countDecks} 片` : `${countDecks} 組`;
       document.getElementById('bomSteps').innerText = `${countSteps} 組`;
 
-      // 預算統計
       const total = (count2m * prices.truss2m) +
                     (count1m * prices.truss1m) +
                     (countCorners * prices.corner) +
@@ -1155,12 +1198,11 @@
 
       document.getElementById('bomTotalPrice').innerText = `NT$ ${total.toLocaleString()}`;
 
-      // 搭設工時粗估
       let setupHrs = ((count2m + count1m) * 0.22) + (countCorners + countBases) * 0.15 + 1.0;
       if (state.structureType === 'stage') {
         setupHrs += (countDecks * 0.09) + (countSteps * 0.4);
       } else {
-        setupHrs += (countDecks * 0.15); // A字架安裝較快
+        setupHrs += (countDecks * 0.15); 
       }
       document.getElementById('bomSetupTime').innerText = `${setupHrs.toFixed(1)} hr`;
     }
@@ -1189,7 +1231,6 @@
       const w = canvas.width / (window.devicePixelRatio || 1);
       const h = canvas.height / (window.devicePixelRatio || 1);
       
-      // 網頁預覽背景
       ctx.clearRect(0, 0, w, h);
       ctx.fillStyle = '#090d16'; 
       ctx.fillRect(0, 0, w, h);
@@ -1204,7 +1245,6 @@
       }
     }
 
-    // 更新資訊看板
     function updateInfoDashboard() {
       const sTypeLabel = state.structureType === 'stage' ? '專業舞台系統' : '打卡牆/視覺牆系統';
       document.getElementById('infoStructureType').innerText = sTypeLabel;
@@ -1215,7 +1255,7 @@
         document.getElementById('infoDeckRow').classList.remove('hidden');
         document.getElementById('infoDeckDim').innerText = `${state.stageWidth.toFixed(1)} x ${state.stageDepth.toFixed(1)} x ${state.deckHeight.toFixed(1)} m`;
       } else {
-        document.getElementById('infoDeckRow').classList.add('hidden'); // 打卡牆不需顯示舞台面積資訊
+        document.getElementById('infoDeckRow').classList.add('hidden'); 
       }
       
       const typeText = { 'led': 'LED 背景螢幕', 'canvas': '輸出帆布背板', 'none': '無配置' };
@@ -1241,7 +1281,6 @@
       const scaleY = (canvasH - padding * 2) / totalDrawHeight;
       const scale = Math.min(scaleX, scaleY) * (isExportMode ? 1.05 : state.zoom);
 
-      // 原點 X, 地面 Y 軸 (匯出時在 y: 730 空間下 originY 被精確限制，防文字重疊壓圖)
       const originX = canvasW / 2 + (isExportMode ? 0 : state.panX);
       const originY = canvasH - padding - 40 + (isExportMode ? 0 : state.panY);
 
@@ -1249,7 +1288,6 @@
       const toPxY = (mY) => originY - mY * scale; 
       const toPxSize = (mSize) => mSize * scale;
 
-      // 配色主題切換 (isExportMode = true 為純白底黑字規範)
       const theme = {
         bg: isExportMode ? '#ffffff' : '#090d16',
         groundLine: isExportMode ? '#000000' : '#334155',
@@ -1268,11 +1306,9 @@
         text: isExportMode ? '#000000' : '#ffffff'
       };
 
-      // 繪製工程格網線
       if (state.showGrid && !isExportMode) {
         drawEngineeringGrid(targetCtx, canvasW, canvasH, originX, originY, scale);
       } else if (isExportMode) {
-        // 匯出時背景全白，畫上極淡的淡灰參考線
         targetCtx.strokeStyle = '#f8fafc';
         targetCtx.lineWidth = 0.5;
         const gridSpacing = scale; 
@@ -1284,7 +1320,6 @@
         }
       }
 
-      // 地面底線
       targetCtx.strokeStyle = theme.groundLine;
       targetCtx.lineWidth = isExportMode ? 3 : 2;
       targetCtx.beginPath();
@@ -1292,7 +1327,6 @@
       targetCtx.lineTo(canvasW, originY);
       targetCtx.stroke();
 
-      // 2. 繪製背景畫面 (LED / 帆布)
       let screenRect = null;
       if (state.backdropType !== 'none') {
         const sw = state.screenWidth;
@@ -1356,7 +1390,6 @@
           }
         }
 
-        // 螢幕上顯示自訂文字 (字型加大)
         targetCtx.fillStyle = theme.backdropText;
         targetCtx.textAlign = 'center';
         targetCtx.textBaseline = 'middle';
@@ -1367,7 +1400,6 @@
         targetCtx.font = `500 ${Math.max(12, toPxSize(0.3))}px 'JetBrains Mono'`;
         targetCtx.fillText(state.screenSubtext, sLeftPx + sWidthPx / 2, sTopPx + sHeightPx / 2 + toPxSize(0.3));
 
-        // 懸吊吊點(舞台模式) 或 固定拉繩(打卡牆)
         targetCtx.strokeStyle = isExportMode ? '#000000' : '#64748b';
         targetCtx.lineWidth = isExportMode ? 1.5 : 1.2;
         const beamTopY = state.stageHeight - state.trussWidth;
@@ -1381,9 +1413,8 @@
         targetCtx.stroke();
       }
 
-      // 3. 繪製舞台地台(Stage Deck) 或 打卡牆底部底框
       const sdW = state.stageWidth;
-      const sdH = state.deckHeight; // 舞台模式為設定值，打卡牆模式為極薄底 0.1m
+      const sdH = state.deckHeight; 
       const sdLeftPx = toPxX(-sdW / 2);
       const sdTopPx = toPxY(sdH);
       const sdWidthPx = toPxSize(sdW);
@@ -1397,7 +1428,6 @@
       targetCtx.strokeRect(sdLeftPx, sdTopPx, sdWidthPx, sdHeightPx);
 
       if (state.structureType === 'stage') {
-        // 舞台專用拼接鋪面格線示意
         targetCtx.strokeStyle = theme.deckGrid;
         targetCtx.lineWidth = 0.8;
         const deckColW = toPxSize(2); 
@@ -1408,7 +1438,6 @@
           targetCtx.stroke();
         }
 
-        // 地台支架腳座
         targetCtx.strokeStyle = theme.deckGrid;
         const feetSpacing = toPxSize(1);
         for (let ix = sdLeftPx; ix <= sdLeftPx + sdWidthPx; ix += feetSpacing) {
@@ -1418,7 +1447,6 @@
           targetCtx.stroke();
         }
 
-        // 4. 安全登台階梯 (僅在舞台模式，且啟用 showSteps 時繪製)
         if (state.showSteps) {
           const stepWPx = toPxSize(1.6);
           const stepHPx = sdHeightPx / 3;
@@ -1435,29 +1463,23 @@
           }
         }
       } else {
-        // 打卡牆視覺樣式：繪製一個帶有簡潔裝飾的底邊踢腳線，不繪製舞台腳架與階梯
         targetCtx.fillStyle = isExportMode ? '#dddddd' : '#334155';
         targetCtx.fillRect(sdLeftPx, sdTopPx, sdWidthPx, sdHeightPx);
       }
 
-      // 5. 繪製鋁合金桁架骨架結構
       const tW = state.trussWidth;
       const sH = state.stageHeight;
 
-      // 兩側立柱中心
       const leftColX = -sdW / 2 + tW / 2;
       const rightColX = sdW / 2 - tW / 2;
 
-      // 繪製左右兩支立柱
       drawTruss2D_internal(targetCtx, toPxX(leftColX - tW / 2), toPxY(sH), toPxSize(tW), toPxSize(sH), 'vertical', theme.trussColor, theme.trussBracing);
       drawTruss2D_internal(targetCtx, toPxX(rightColX - tW / 2), toPxY(sH), toPxSize(tW), toPxSize(sH), 'vertical', theme.trussColor, theme.trussBracing);
 
-      // 繪製頂部橫樑
       const topBeamLeftX = leftColX - tW / 2;
       const topBeamWidth = sdW;
       drawTruss2D_internal(targetCtx, toPxX(topBeamLeftX), toPxY(sH), toPxSize(topBeamWidth), toPxSize(tW), 'horizontal', theme.trussColor, theme.trussBracing);
 
-      // 頂部兩端轉角箱 (Corner Box)
       targetCtx.fillStyle = isExportMode ? '#ffffff' : '#475569';
       targetCtx.strokeStyle = theme.trussColor;
       targetCtx.lineWidth = 1.5;
@@ -1467,7 +1489,6 @@
       targetCtx.fillRect(toPxX(rightColX - tW / 2 - 0.025), toPxY(sH + 0.025), boxSize, boxSize);
       targetCtx.strokeRect(toPxX(rightColX - tW / 2 - 0.025), toPxY(sH + 0.025), boxSize, boxSize);
 
-      // 鋼製配重底座
       targetCtx.fillStyle = isExportMode ? '#ffffff' : '#334155';
       targetCtx.strokeStyle = theme.trussColor;
       const baseWPx = toPxSize(tW * 1.8);
@@ -1478,31 +1499,23 @@
       targetCtx.fillRect(toPxX(rightColX) - baseWPx / 2, originY - baseHPx, baseWPx, baseHPx);
       targetCtx.strokeRect(toPxX(rightColX) - baseWPx / 2, originY - baseHPx, baseWPx, baseHPx);
 
-      // 6. 工程標註標線 (Dimensioning Lines) (字級全面加大)
       if (state.showDimensions) {
         targetCtx.save();
         targetCtx.fillStyle = theme.dimColor;
         targetCtx.strokeStyle = theme.dimLine;
         targetCtx.font = `bold ${isExportMode ? 15 : 14}px 'JetBrains Mono', 'Noto Sans TC'`;
 
-        // 標註：總寬度
         drawDimensionLine_internal(targetCtx, toPxX(-sdW / 2), toPxY(sH + 0.8), toPxX(sdW / 2), toPxY(sH + 0.8), 20, `${sdW.toFixed(2)} m (總寬度 W)`, 'horizontal', theme);
-
-        // 標註：總高度
         drawDimensionLine_internal(targetCtx, toPxX(-sdW / 2 - 0.8), toPxY(0), toPxX(-sdW / 2 - 0.8), toPxY(sH), -20, `${sH.toFixed(2)} m (桁架高度 H)`, 'vertical', theme);
 
         if (state.structureType === 'stage') {
-          // 標註：舞台高度 (僅舞台模式)
           drawDimensionLine_internal(targetCtx, toPxX(sdW / 2 + 0.5), toPxY(0), toPxX(sdW / 2 + 0.5), toPxY(sdH), 15, `${sdH.toFixed(2)} m (平台高度 Sh)`, 'vertical', theme);
         } else {
-          // 標註：踢腳板高度 (打卡牆模式)
           drawDimensionLine_internal(targetCtx, toPxX(sdW / 2 + 0.5), toPxY(0), toPxX(sdW / 2 + 0.5), toPxY(0.1), 15, `${(0.1).toFixed(2)} m (底框座)`, 'vertical', theme);
         }
 
-        // 標註：桁架管徑
         drawDimensionLine_internal(targetCtx, toPxX(leftColX + tW / 2), toPxY(sH - tW), toPxX(leftColX + tW / 2), toPxY(sH), 10, `${Math.round(tW * 100)}cm`, 'vertical-small', theme);
 
-        // 背景/背板畫面標線
         if (state.backdropType !== 'none') {
           const sw = state.screenWidth;
           const sh = state.screenHeight;
@@ -1517,7 +1530,6 @@
         targetCtx.restore();
       }
 
-      // 非匯出模式下，建立拖曳熱區
       if (!isExportMode && state.backdropType !== 'none' && screenRect) {
         state.screenBoundingBox = screenRect;
       } else {
@@ -1526,11 +1538,10 @@
     }
 
     // -------------------
-    // 5B. 3D 立體投影繪圖核心 (含打卡牆後方斜撐繪製)
+    // 5B. 3D 立體投影繪圖核心
     // -------------------
     function drawStage3D(targetCtx, canvasW, canvasH, isExportMode = false) {
       const scale = (isExportMode ? 42 : 36) * state.zoom;
-      // 匯出時適度將 originY 往上推 (40), 防 3D 立體深度往 Z 軸延伸時壓到下方表格文字
       const originX = canvasW / 2 + (isExportMode ? 0 : state.panX);
       const originY = canvasH / 2 + (isExportMode ? 40 : 100) + (isExportMode ? 0 : state.panY);
 
@@ -1564,7 +1575,6 @@
         dimLine: isExportMode ? 'rgba(0,0,0,0.5)' : 'rgba(245, 158, 11, 0.6)'
       };
 
-      // 3D 底座地面大網格
       if (state.showGrid) {
         draw3DGrid_internal(targetCtx, project3D, state.stageWidth, state.stageDepth, theme.gridLine);
       }
@@ -1573,9 +1583,8 @@
 
       const w = state.stageWidth;
       const d = state.stageDepth;
-      const sh = state.deckHeight; // 舞台高度 或 踢腳0.1m
+      const sh = state.deckHeight; 
 
-      // 1. 地台或是底座結構繪製
       renderQueue.push({
         type: 'stage_deck',
         depth: 0,
@@ -1590,7 +1599,6 @@
           const p7 = project3D(w/2, sh, d/2);
           const p8 = project3D(-w/2, sh, d/2);
 
-          // 頂面
           targetCtx.fillStyle = theme.deckTop;
           targetCtx.strokeStyle = theme.deckBorder;
           targetCtx.lineWidth = isExportMode ? 1.5 : 1.2;
@@ -1600,7 +1608,6 @@
           targetCtx.fill(); targetCtx.stroke();
 
           if (state.structureType === 'stage') {
-            // 頂部拼裝格線 (僅舞台模式)
             targetCtx.strokeStyle = isExportMode ? '#e2e8f0' : '#334155';
             targetCtx.lineWidth = 0.8;
             for (let oz = -d/2 + 1; oz < d/2; oz += 1) {
@@ -1610,14 +1617,12 @@
             }
           }
 
-          // 前立面
           targetCtx.fillStyle = theme.deckFront;
           targetCtx.beginPath();
           targetCtx.moveTo(p4.x, p4.y); targetCtx.lineTo(p3.x, p3.y); targetCtx.lineTo(p7.x, p7.y); targetCtx.lineTo(p8.x, p8.y);
           targetCtx.closePath();
           targetCtx.fill(); targetCtx.stroke();
 
-          // 側立面
           targetCtx.fillStyle = theme.deckSide;
           targetCtx.beginPath();
           targetCtx.moveTo(p3.x, p3.y); targetCtx.lineTo(p2.x, p2.y); targetCtx.lineTo(p6.x, p6.y); targetCtx.lineTo(p7.x, p7.y);
@@ -1626,7 +1631,6 @@
         }
       });
 
-      // 2. 桁架兩側立柱
       const tW = state.trussWidth;
       const sH = state.stageHeight;
       const leftColX = -w / 2 + tW / 2;
@@ -1641,7 +1645,6 @@
         }
       });
 
-      // 3. 頂部橫樑
       renderQueue.push({
         type: 'truss_beam',
         depth: 1, 
@@ -1650,12 +1653,11 @@
         }
       });
 
-      // 4. 背景背板本體 (LED 牆 或 帆布牆)
       if (state.backdropType !== 'none') {
         const sw = state.screenWidth;
         const sh = state.screenHeight;
         const sY = state.screenY;
-        const sZ = -d/4; // 稍微靠後定位
+        const sZ = -d/4; 
 
         renderQueue.push({
           type: 'led_screen',
@@ -1666,7 +1668,6 @@
             const p3 = project3D(sw/2, sY + sh, sZ);
             const p4 = project3D(-sw/2, sY + sh, sZ);
 
-            // 鋼索/吊件 吊掛
             targetCtx.strokeStyle = isExportMode ? '#000000' : '#64748b';
             targetCtx.lineWidth = 1.2;
             const rope1_bot = project3D(-sw/2 + 0.4, sY + sh, sZ);
@@ -1678,7 +1679,6 @@
             targetCtx.moveTo(rope2_bot.x, rope2_bot.y); targetCtx.lineTo(rope2_top.x, rope2_top.y);
             targetCtx.stroke();
 
-            // 畫面填充色
             targetCtx.save();
             if (!isExportMode) {
               targetCtx.shadowColor = theme.backdropBorder;
@@ -1695,7 +1695,6 @@
             targetCtx.lineWidth = isExportMode ? 1.8 : 2.5;
             targetCtx.stroke();
 
-            // 自訂文字 3D 投影定位繪製 (加大)
             targetCtx.fillStyle = theme.backdropText;
             targetCtx.textAlign = 'center';
             targetCtx.textBaseline = 'middle';
@@ -1711,35 +1710,27 @@
         });
       }
 
-      // 5. 特殊結構渲染：如果是「打卡牆」模式，在 3D 繪製「後方防倒 A 字斜撐骨架」
       if (state.structureType === 'photowall') {
         renderQueue.push({
           type: 'photowall_bracing',
-          depth: 3, // 放在背面深度
+          depth: 3, 
           draw: () => {
             targetCtx.strokeStyle = isExportMode ? '#000000' : 'rgba(255, 255, 255, 0.45)';
             targetCtx.lineWidth = 1.5;
             
-            // 每間隔 2 米畫一支後方斜撐
             const spacing = 2;
             const halfW = w / 2;
             for (let ox = -halfW + 0.5; ox <= halfW - 0.5; ox += spacing) {
-              // 牆面背後的連接點 (高度在 3.0m 的位置)
               const wallAttach = project3D(ox, Math.min(3.0, sH - 0.5), -d/2);
-              // 地面支撐點 (往後延伸 1.5m 深度)
               const groundAnchor = project3D(ox, 0, -d/2 - 1.5);
-              // 地面底拉支撐線
               const groundLine = project3D(ox, 0, -d/2);
 
               targetCtx.beginPath();
-              // 斜桿
               targetCtx.moveTo(wallAttach.x, wallAttach.y);
               targetCtx.lineTo(groundAnchor.x, groundAnchor.y);
-              // 地面平桿
               targetCtx.lineTo(groundLine.x, groundLine.y);
               targetCtx.stroke();
 
-              // 加上地面斜支撐的配重沙包示意
               targetCtx.fillStyle = isExportMode ? '#000000' : '#ef4444';
               targetCtx.beginPath();
               targetCtx.arc(groundAnchor.x, groundAnchor.y, 4, 0, Math.PI * 2);
@@ -1749,7 +1740,6 @@
         });
       }
 
-      // 6. 3D 尺寸標註標線 (字級加大)
       if (state.showDimensions) {
         renderQueue.push({
           type: 'dimensions_3d',
@@ -1760,18 +1750,15 @@
             targetCtx.strokeStyle = theme.dimLine;
             targetCtx.font = `bold ${isExportMode ? 14 : 13}px 'JetBrains Mono'`;
 
-            // A. 寬度標線 (最前端底部)
             const wL = project3D(-w/2, 0, d/2);
             const wR = project3D(w/2, 0, d/2);
             draw3DDimensionLine_internal(targetCtx, wL, wR, `W: ${w.toFixed(1)} m`);
 
-            // B. 高度標線 (左立柱旁)
             const hB = project3D(-w/2 - 0.4, 0, -d/2);
             const hT = project3D(-w/2 - 0.4, sH, -d/2);
             draw3DDimensionLine_internal(targetCtx, hB, hT, `H: ${sH.toFixed(1)} m`);
 
             if (state.structureType === 'stage') {
-              // C. 深度標線 (僅舞台模式標示深度)
               const dF = project3D(w/2 + 0.4, 0, d/2);
               const dB = project3D(w/2 + 0.4, 0, -d/2);
               draw3DDimensionLine_internal(targetCtx, dF, dB, `D: ${d.toFixed(1)} m`);
@@ -1782,7 +1769,6 @@
         });
       }
 
-      // 執行畫家算法，由遠至近渲染
       renderQueue.sort((a, b) => b.depth - a.depth); 
       renderQueue.forEach(item => item.draw());
     }
@@ -2082,7 +2068,6 @@
       targetCtx.restore();
     }
 
-    // 地面與牆面 3D 底座格線
     function draw3DGrid_internal(targetCtx, project3D, w, d, gridLineColor) {
       targetCtx.save();
       targetCtx.strokeStyle = gridLineColor;
@@ -2120,7 +2105,7 @@
     function handleStart(clientX, clientY) {
       const rect = canvas.getBoundingClientRect();
       const clickX = clientX - rect.left;
-      const clickY = clientY - rect.top; // 修正拼寫，此處已修正 top -> rect.top 徹底解決卡死當機跑板問題
+      const clickY = clientY - rect.top; // 修正拼寫問題：clientY - top 導致的 undefined error 已在此徹底修正！
 
       state.isDragging = true;
       state.dragStart.x = clickX;
@@ -2180,7 +2165,6 @@
 
         let newScreenY = state.screenY - deltaYInMeters;
         
-        // 限制離地高最小值與最大高度安全值
         const minVal = state.structureType === 'stage' ? state.deckHeight : 0.1;
         const maxVal = state.stageHeight - state.screenHeight - state.trussWidth;
         newScreenY = Math.max(minVal, Math.min(maxVal, newScreenY));
@@ -2213,12 +2197,11 @@
       canvas.style.cursor = 'grab';
     }
 
-    // 滑鼠監聽
     canvas.addEventListener('mousedown', (e) => handleStart(e.clientX, e.clientY));
     canvas.addEventListener('mousemove', (e) => handleMove(e.clientX, e.clientY));
     window.addEventListener('mouseup', handleEnd);
 
-    // 觸控監聽
+    // 行動端觸控事件
     canvas.addEventListener('touchstart', (e) => {
       if (e.touches.length === 1) {
         handleStart(e.touches[0].clientX, e.touches[0].clientY);
@@ -2227,14 +2210,16 @@
 
     canvas.addEventListener('touchmove', (e) => {
       if (e.touches.length === 1) {
+        // 在拖曳畫布時避免整頁畫面拉動回彈 (bouncing)
+        e.preventDefault(); 
         handleMove(e.touches[0].clientX, e.touches[0].clientY);
       }
-    }, { passive: true });
+    }, { passive: false });
 
     canvas.addEventListener('touchend', handleEnd);
 
     // ----------------------------------------------------
-    // 9. 專業高階白底黑線向量圖檔匯出引擎 (無框排版，文字絕不跑版且與圖面完全分離)
+    // 9. 專業高階白底黑線向量圖檔匯出引擎 (無框排版，文字絕不跑版)
     // ----------------------------------------------------
     function wrapTextAndMeasure(context, text, x, y, maxWidth, lineHeight) {
       const words = text.split('');
@@ -2242,7 +2227,6 @@
       let currentY = y;
       
       for (let n = 0; n < words.length; n++) {
-        // 處理手動分行
         if (words[n] === '\n') {
           context.fillText(line, x, currentY);
           line = '';
@@ -2273,47 +2257,38 @@
         expCanvas.height = 1080;
         const expCtx = expCanvas.getContext('2d');
 
-        // 1. 純白乾淨背景
         expCtx.fillStyle = '#ffffff';
         expCtx.fillRect(0, 0, 1920, 1080);
 
-        // 2. 呼叫渲染分支 (高度限制在 730px 內，保留 750-1080 做為文字區，徹底解決文字壓圖跑版問題)
         if (state.viewMode === 'front') {
           drawStage2D(expCtx, 1920, 730, true);
         } else {
           drawStage3D(expCtx, 1920, 730, true);
         }
 
-        // 3. 繪製精緻的實線工程說明與安全規範底欄表格
         expCtx.save();
         
-        // 畫出最外側安全防護邊框
         expCtx.strokeStyle = '#111111';
         expCtx.lineWidth = 1.5;
         expCtx.strokeRect(30, 30, 1920 - 60, 1080 - 60);
 
-        // 定義表格區塊在下方的完全淨空區 (y: 750px ~ 1050px)
         const blockX = 30;
         const blockY = 750;
-        const blockW = 1860; // 寬度拉滿
+        const blockW = 1860; 
         const blockH = 300;
 
-        // 繪製表格大外框 (將圖面與文字表格完全劃分開來)
         expCtx.strokeStyle = '#111111';
         expCtx.lineWidth = 1.5;
         expCtx.strokeRect(blockX, blockY, blockW, blockH);
 
-        // 繪製分隔線
         expCtx.beginPath();
-        // 第一道分隔線：圖標與規格 (x: 580)
         expCtx.moveTo(blockX + 550, blockY);
         expCtx.lineTo(blockX + 550, blockY + blockH);
-        // 第二道分隔線：規格與備註規範 (x: 1140)
         expCtx.moveTo(blockX + 1110, blockY);
         expCtx.lineTo(blockX + 1110, blockY + blockH);
         expCtx.stroke();
 
-        // --- 第一欄：圖紙標題區 (x: 50 ~ 550) ---
+        // 第一欄：圖紙標題區
         const col1X = blockX + 25;
         expCtx.fillStyle = '#000000';
         expCtx.font = "bold 24px 'Noto Sans TC'";
@@ -2324,11 +2299,11 @@
 
         expCtx.font = "14px 'Noto Sans TC'";
         expCtx.fillStyle = '#555555';
-        expCtx.fillText(`設計單位：場地與舞台視覺即時建構規劃組`, col1X, blockY + 110);
-        expCtx.fillText(`軟體版本：STAGE VISUALIZER PRO v4.2`, col1X, blockY + 140);
+        expCtx.fillText(`設計單位：場地與舞台規劃組`, col1X, blockY + 110);
+        expCtx.fillText(`軟體版本：STAGE VISUALIZER PRO v4.3`, col1X, blockY + 140);
         expCtx.fillText(`審核簽章：(請確認現場地面平整度與強風防護)`, col1X, blockY + 170);
 
-        // --- 第二欄：結構尺寸參數區 (x: 610 ~ 1110) ---
+        // 第二欄：結構尺寸參數區
         const col2X = blockX + 580;
         expCtx.fillStyle = '#000000';
         expCtx.font = "bold 16px 'Noto Sans TC'";
@@ -2352,9 +2327,9 @@
         const mediaLabel = state.backdropType === 'led' ? 'LED 顯示螢幕' : state.backdropType === 'canvas' ? '大圖高張力帆布' : '無配置';
         expCtx.fillText(`• 視覺背景：${mediaLabel} (寬 ${state.screenWidth.toFixed(2)}m  x  高 ${state.screenHeight.toFixed(2)}m, 離地高 ${state.screenY.toFixed(2)}m)`, col2X, detailY);
 
-        // --- 第三欄：現場工程備註與施工規範區 (x: 1175 ~ 1870) ---
+        // 第三欄：現場工程備註與施工規範區
         const col3X = blockX + 1145;
-        const col3W = 690; // 指定安全寬度限制
+        const col3W = 690; 
         expCtx.fillStyle = '#000000';
         expCtx.font = "bold 16px 'Noto Sans TC'";
         expCtx.fillText("📝 現場施工備註與安全指引規範：", col3X, blockY + 35);
@@ -2362,24 +2337,21 @@
         expCtx.font = "14px 'Noto Sans TC'";
         expCtx.fillStyle = '#444444';
         
-        // 呼叫折行引擎，文字在 690px 安全寬度內自動完美換行，絕對不跑版
         wrapTextAndMeasure(expCtx, state.designNotes, col3X, blockY + 75, col3W, 22);
 
-        // 右下角時間與比例尺浮水印
         expCtx.fillStyle = '#888888';
         expCtx.font = "11px 'JetBrains Mono'";
         expCtx.fillText(`DATE: ${new Date().toLocaleDateString()} | VIEW: ${state.viewMode.toUpperCase()} | SCALE: 1:${Math.round(200 / state.zoom)} (SCALE TO FIT)`, col3X + col3W - 280, blockY + blockH - 25);
 
         expCtx.restore();
 
-        // 4. 下載圖片檔
         const dataURL = expCanvas.toDataURL('image/png');
         const link = document.createElement('a');
         link.download = `專業工程藍圖_${state.structureType === 'stage' ? '舞台系統' : '打卡牆系統'}_${state.viewMode === 'front' ? '2D前視圖' : '3D立體圖'}_${Date.now()}.png`;
         link.href = dataURL;
         link.click();
 
-        showNotification('已成功匯出標準白底黑線工程施工圖紙！', 'success');
+        showNotification('已成功匯出白底黑線工程施工圖紙！', 'success');
       } catch (err) {
         showNotification('匯出圖檔時發生未知錯誤：' + err.message, 'error');
       }
@@ -2391,10 +2363,7 @@
     window.onload = function() {
       initUI();
       resizeCanvas();
-      
-      // 預設套用標準中型舞台規格
       applyPreset(presets.medium);
-      
       resetView();
     };
 
