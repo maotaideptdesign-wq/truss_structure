@@ -1,0 +1,2403 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>即時場地建構與舞台視覺系統 - PRO</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght=300;400;500;700&family=Noto+Sans+TC:wght=300;400;500;700;900&display=swap');
+    body {
+      font-family: 'Noto Sans TC', 'JetBrains Mono', sans-serif;
+      background-color: #0f172a;
+      -webkit-tap-highlight-color: transparent;
+    }
+    canvas {
+      image-rendering: -moz-crisp-edges;
+      image-rendering: -webkit-crisp-edges;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+    /* 自訂捲軸 */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #1e293b;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #475569;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #64748b;
+    }
+  </style>
+</head>
+<body class="text-slate-100 min-h-screen flex flex-col overflow-x-hidden select-none">
+
+  <!-- 頂部導覽列 -->
+  <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur px-4 sm:px-6 py-4 flex flex-wrap justify-between items-center gap-4 sticky top-0 z-50">
+    <div class="flex items-center gap-3">
+      <div class="bg-indigo-600 p-2 sm:p-2.5 rounded-lg text-white shadow-lg shadow-indigo-500/20">
+        <i class="fa-solid fa-layer-group text-lg sm:text-xl animate-pulse"></i>
+      </div>
+      <div>
+        <h1 class="text-base sm:text-lg font-bold tracking-wider text-white flex items-center gap-2 flex-wrap">
+          即時舞台視覺系統
+          <span class="text-[10px] sm:text-xs bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 px-2 py-0.5 rounded-full font-normal">PRO</span>
+        </h1>
+        <p class="text-[10px] sm:text-xs text-slate-400">一鍵切換舞台/打卡視覺牆、無階梯配置佈置溝通專用系統</p>
+      </div>
+    </div>
+    
+    <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end border-t border-slate-800/60 pt-3 sm:pt-0 sm:border-0">
+      <div class="flex items-center gap-1.5">
+        <label class="text-xs text-slate-400 font-medium hidden md:inline">快速樣版：</label>
+        <select id="presetSelect" class="bg-slate-800 border border-slate-700 text-xs sm:text-sm text-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition cursor-pointer">
+          <option value="medium">標準中型舞台 (12m x 7m)</option>
+          <option value="small">小型發表會舞台 (8m x 5m)</option>
+          <option value="large">大型演唱會舞台 (18m x 10m)</option>
+          <option value="custom">自訂尺寸數據</option>
+        </select>
+      </div>
+      <button id="btnExport" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-semibold px-3 sm:px-4 py-1.5 rounded-lg flex items-center gap-1.5 transition duration-200 shadow-md shadow-indigo-600/10">
+        <i class="fa-solid fa-print"></i> 匯出白底黑線圖
+      </button>
+    </div>
+  </header>
+
+  <!-- 主區塊 -->
+  <main class="flex-1 flex flex-col lg:flex-row min-h-0">
+    
+    <!-- 左側參數控制面板 (滾動區) -->
+    <section class="w-full lg:w-[420px] bg-slate-900/40 border-r border-slate-800 flex flex-col overflow-y-auto max-h-[50vh] lg:max-h-none">
+      
+      <!-- 控制頁籤 -->
+      <div class="flex border-b border-slate-800 sticky top-0 bg-slate-900 z-10">
+        <button id="tabBtnDimensions" class="flex-1 py-3 text-xs sm:text-sm font-medium border-b-2 border-indigo-500 text-indigo-400 bg-slate-900/60 transition flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-sliders"></i> 尺寸與結構
+        </button>
+        <button id="tabBtnStyle" class="flex-1 py-3 text-xs sm:text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 transition flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-palette"></i> 視覺與備註
+        </button>
+        <button id="tabBtnBOM" class="flex-1 py-3 text-xs sm:text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/40 transition flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-calculator"></i> 材料預算（參考）
+        </button>
+      </div>
+
+      <!-- 頁籤1: 尺寸與結構用途 -->
+      <div id="tabPanelDimensions" class="p-4 sm:p-6 space-y-6">
+        
+        <!-- 結構用途設定 -->
+        <div class="bg-slate-800/40 p-3.5 rounded-xl border border-slate-700/50 space-y-3">
+          <label class="block text-xs font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-indigo-500"></span> 1. 結構用途型式
+          </label>
+          <div class="grid grid-cols-2 gap-2">
+            <button id="btnTypeStage" class="py-2.5 px-3 rounded-lg text-xs font-semibold border transition flex items-center justify-center gap-1.5 bg-indigo-600 border-indigo-500 text-white shadow-md shadow-indigo-600/15">
+              <i class="fa-solid fa-person-chalkboard"></i> 專業舞台系統
+            </button>
+            <button id="btnTypePhotoWall" class="py-2.5 px-3 rounded-lg text-xs font-semibold border border-slate-700 bg-slate-800 text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-camera"></i> 打卡牆 / 視覺牆
+            </button>
+          </div>
+        </div>
+
+        <!-- 舞台主尺寸 -->
+        <div class="space-y-4">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span> 2. 桁架Truss外框結構尺寸
+          </h3>
+          
+          <!-- 舞台寬度 -->
+          <div>
+            <div class="flex justify-between text-xs sm:text-sm mb-1.5">
+              <label class="text-slate-300 flex items-center gap-1.5">
+                <i class="fa-solid fa-arrows-left-right text-slate-500 w-4 text-center"></i> 總寬度 (W)
+              </label>
+              <span class="text-indigo-400 font-mono font-semibold" id="valStageWidth">12.0 m</span>
+            </div>
+            <input type="range" id="inputStageWidth" min="5" max="24" step="0.5" value="12" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500 py-1">
+            <div class="flex justify-between text-[10px] text-slate-500 px-1 mt-1">
+              <span>5.0 m</span>
+              <span>15.0 m</span>
+              <span>24.0 m</span>
+            </div>
+          </div>
+
+          <!-- 舞台高度 -->
+          <div>
+            <div class="flex justify-between text-xs sm:text-sm mb-1.5">
+              <label class="text-slate-300 flex items-center gap-1.5">
+                <i class="fa-solid fa-arrows-up-down text-slate-500 w-4 text-center"></i> 總高度 (H)
+              </label>
+              <span class="text-indigo-400 font-mono font-semibold" id="valStageHeight">7.0 m</span>
+            </div>
+            <input type="range" id="inputStageHeight" min="4" max="14" step="0.5" value="7" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500 py-1">
+            <div class="flex justify-between text-[10px] text-slate-500 px-1 mt-1">
+              <span>4.0 m</span>
+              <span>9.0 m</span>
+              <span>14.0 m</span>
+            </div>
+          </div>
+
+          <!-- 舞台深度 -->
+          <div id="depthContainer">
+            <div class="flex justify-between text-xs sm:text-sm mb-1.5">
+              <label class="text-slate-300 flex items-center gap-1.5">
+                <i class="fa-solid fa-expand text-slate-500 w-4 text-center"></i> 結構總深度 (D)
+              </label>
+              <span class="text-indigo-400 font-mono font-semibold" id="valStageDepth">6.0 m</span>
+            </div>
+            <input type="range" id="inputStageDepth" min="3" max="12" step="0.5" value="6" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500 py-1">
+            <div class="flex justify-between text-[10px] text-slate-500 px-1 mt-1">
+              <span>3.0 m</span>
+              <span>7.5 m</span>
+              <span>12.0 m</span>
+            </div>
+          </div>
+        </div>
+
+        <hr class="border-slate-800/80">
+
+        <!-- 地台與階梯結構 -->
+        <div class="space-y-4" id="deckStructureSection">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span> 3. 舞台平台與階梯設定
+          </h3>
+
+          <!-- 地台高度 -->
+          <div id="deckHeightContainer">
+            <div class="flex justify-between text-xs sm:text-sm mb-1.5">
+              <label class="text-slate-300 flex items-center gap-1.5">
+                <i class="fa-solid fa-cubes text-slate-500 w-4 text-center"></i> 平台面高度 (Sh)
+              </label>
+              <span class="text-indigo-400 font-mono font-semibold" id="valDeckHeight">1.2 m</span>
+            </div>
+            <input type="range" id="inputDeckHeight" min="0.4" max="2.4" step="0.1" value="1.2" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500 py-1">
+            <div class="flex justify-between text-[10px] text-slate-500 px-1 mt-1">
+              <span>0.4 m</span>
+              <span>1.4 m</span>
+              <span>2.4 m</span>
+            </div>
+          </div>
+
+          <!-- 登台階梯開關 -->
+          <div id="stepsToggleContainer" class="flex items-center justify-between bg-slate-800/30 p-3 rounded-lg border border-slate-800">
+            <label class="text-xs sm:text-sm text-slate-300 flex items-center gap-2 cursor-pointer select-none" for="chkShowSteps">
+              <i class="fa-solid fa-stairs text-indigo-400 w-4 text-center"></i> 配置登台階梯
+            </label>
+            <input type="checkbox" id="chkShowSteps" class="w-5 h-5 rounded text-indigo-600 bg-slate-800 border-slate-700 focus:ring-indigo-500 cursor-pointer" checked>
+          </div>
+
+          <!-- 桁架寬度 -->
+          <div>
+            <div class="flex justify-between text-xs sm:text-sm mb-1.5">
+              <label class="text-slate-300 flex items-center gap-1.5">
+                <i class="fa-solid fa-border-all text-slate-500 w-4 text-center"></i> 桁架管徑規格 (Truss)
+              </label>
+              <span class="text-indigo-400 font-mono font-semibold" id="valTrussWidth">40 cm</span>
+            </div>
+            <input type="range" id="inputTrussWidth" min="20" max="60" step="5" value="40" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500 py-1">
+            <div class="flex justify-between text-[10px] text-slate-500 px-1 mt-1">
+              <span>20 cm</span>
+              <span>40 cm</span>
+              <span>60 cm</span>
+            </div>
+          </div>
+        </div>
+
+        <hr class="border-slate-800/80">
+
+        <!-- 背景配置 -->
+        <div class="space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span> 4. 牆面 / 畫面配置
+            </h3>
+            <select id="backdropType" class="bg-slate-800 border border-slate-700 text-xs text-indigo-400 rounded-lg px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="led">LED 螢幕背景</option>
+              <option value="canvas">輸出帆布背板</option>
+              <option value="none">無背景配置</option>
+            </select>
+          </div>
+
+          <div id="screenControls" class="space-y-4 transition duration-200">
+            <!-- 螢幕寬度 -->
+            <div>
+              <div class="flex justify-between text-xs sm:text-sm mb-1.5">
+                <label id="lblBackdropWidth" class="text-slate-300 flex items-center gap-1.5">
+                  <i class="fa-solid fa-tablet-screen-button text-slate-500 w-4 text-center"></i> 畫面寬度 (Sw)
+                </label>
+                <span class="text-indigo-400 font-mono font-semibold" id="valScreenWidth">8.0 m</span>
+              </div>
+              <input type="range" id="inputScreenWidth" min="3" max="20" step="0.5" value="8" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500 py-1">
+            </div>
+
+            <!-- 螢幕高度 -->
+            <div>
+              <div class="flex justify-between text-xs sm:text-sm mb-1.5">
+                <label id="lblBackdropHeight" class="text-slate-300 flex items-center gap-1.5">
+                  <i class="fa-solid fa-tablet-screen-button rotate-90 text-slate-500 w-4 text-center"></i> 畫面高度 (Sh)
+                </label>
+                <span class="text-indigo-400 font-mono font-semibold" id="valScreenHeight">4.0 m</span>
+              </div>
+              <input type="range" id="inputScreenHeight" min="2" max="10" step="0.5" value="4" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500 py-1">
+            </div>
+
+            <!-- 懸空高度 -->
+            <div id="screenYContainer">
+              <div class="flex justify-between text-xs sm:text-sm mb-1.5">
+                <label id="lblScreenY" class="text-slate-300 flex items-center gap-1.5">
+                  <i class="fa-solid fa-circle-arrow-up text-slate-500 w-4 text-center"></i> 畫面離地高度 (Sy)
+                </label>
+                <span class="text-indigo-400 font-mono font-semibold" id="valScreenY">1.5 m</span>
+              </div>
+              <input type="range" id="inputScreenY" min="0" max="4" step="0.1" value="1.5" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500 py-1">
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 頁籤2: 視覺與備註 -->
+      <div id="tabPanelStyle" class="p-4 sm:p-6 space-y-6 hidden">
+        
+        <!-- 視覺外觀 -->
+        <div class="space-y-4">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> 配色與元件渲染 (網頁預覽)
+          </h3>
+
+          <!-- 桁架顏色 -->
+          <div>
+            <label class="block text-xs sm:text-sm text-slate-300 mb-1.5">桁架烤漆外觀</label>
+            <div class="grid grid-cols-5 gap-2">
+              <button class="color-swatch ring-2 ring-white h-9 rounded-md bg-slate-400" data-color="#94a3b8" title="太空銀"></button>
+              <button class="color-swatch h-9 rounded-md bg-slate-800 border border-slate-700" data-color="#1e293b" title="霧面黑"></button>
+              <button class="color-swatch h-9 rounded-md bg-amber-500" data-color="#f59e0b" title="工程黃"></button>
+              <button class="color-swatch h-9 rounded-md bg-indigo-500" data-color="#6366f1" title="科技藍"></button>
+              <button class="color-swatch h-9 rounded-md bg-rose-600" data-color="#e11d48" title="活力紅"></button>
+            </div>
+          </div>
+
+          <!-- 螢幕發光色彩 -->
+          <div>
+            <label class="block text-xs sm:text-sm text-slate-300 mb-1.5">背景發光色彩 / 氛圍</label>
+            <div class="grid grid-cols-5 gap-2">
+              <button class="screen-color-swatch ring-2 ring-white h-9 rounded-md bg-blue-950/80 border border-blue-500" data-color="rgba(23, 37, 84, 0.75)" data-border="rgba(59, 130, 246, 0.8)" title="極光藍"></button>
+              <button class="screen-color-swatch h-9 rounded-md bg-violet-950/80 border border-violet-500" data-color="rgba(46, 16, 101, 0.75)" data-border="rgba(139, 92, 246, 0.8)" title="迷幻紫"></button>
+              <button class="screen-color-swatch h-9 rounded-md bg-emerald-950/80 border border-emerald-500" data-color="rgba(2, 44, 34, 0.75)" data-border="rgba(16, 185, 129, 0.8)" title="矩陣綠"></button>
+              <button class="screen-color-swatch h-9 rounded-md bg-slate-900 border border-slate-700" data-color="rgba(15, 23, 42, 0.9)" data-border="rgba(71, 85, 105, 0.8)" title="純深灰"></button>
+              <button class="screen-color-swatch h-9 rounded-md bg-rose-950/80 border border-rose-500" data-color="rgba(67, 12, 30, 0.75)" data-border="rgba(244, 63, 94, 0.8)" title="霓虹紅"></button>
+            </div>
+          </div>
+        </div>
+
+        <hr class="border-slate-800/80">
+
+        <!-- 顯示與細部選項 -->
+        <div class="space-y-4">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> 細部繪圖與開關
+          </h3>
+
+          <div class="space-y-3">
+            <!-- 顯示尺寸標註 -->
+            <label class="flex items-center justify-between cursor-pointer py-1">
+              <span class="text-xs sm:text-sm text-slate-300">顯示尺寸標註與輔助線</span>
+              <input type="checkbox" id="chkShowDimensions" class="w-5 h-5 rounded text-indigo-600 bg-slate-800 border-slate-700 focus:ring-indigo-500" checked>
+            </label>
+
+            <!-- 顯示工程網格 -->
+            <label class="flex items-center justify-between cursor-pointer py-1">
+              <span class="text-xs sm:text-sm text-slate-300">顯示背景工程網格線</span>
+              <input type="checkbox" id="chkShowGrid" class="w-5 h-5 rounded text-indigo-600 bg-slate-800 border-slate-700 focus:ring-indigo-500" checked>
+            </label>
+
+            <!-- 桁架結構交叉密度 -->
+            <div>
+              <div class="flex justify-between text-xs text-slate-300 mb-1">
+                <span>桁架內支撐斜撐密度</span>
+                <span id="valBraceDensity" class="font-mono text-emerald-400">適中</span>
+              </div>
+              <input type="range" id="inputBraceDensity" min="1" max="3" step="1" value="2" class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 py-1">
+            </div>
+          </div>
+        </div>
+
+        <hr class="border-slate-800/80">
+
+        <!-- 文字覆蓋與工程備註 -->
+        <div class="space-y-4">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> 畫面內容與工程備註 (將輸出於圖面)
+          </h3>
+          <div>
+            <label class="block text-xs sm:text-sm text-slate-300 mb-1.5">主視覺牆 / 螢幕大標題</label>
+            <input type="text" id="inputScreenText" value="LIVE SHOW" placeholder="例如：年度論壇主視覺" class="w-full bg-slate-800 border border-slate-700 text-slate-200 rounded-lg px-3 py-2 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          </div>
+          <div>
+            <label class="block text-xs sm:text-sm text-slate-300 mb-1.5">副標題 / 展會日期資訊</label>
+            <input type="text" id="inputScreenSubtext" value="STAGE VISUALIZER" placeholder="例如：2026.05.21" class="w-full bg-slate-800 border border-slate-700 text-slate-200 rounded-lg px-3 py-2 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          </div>
+          <div>
+            <label class="block text-xs sm:text-sm text-slate-300 mb-1.5">現場施工備註與安全指引</label>
+            <textarea id="inputNotes" rows="4" class="w-full bg-slate-800 border border-slate-700 text-slate-200 rounded-lg px-3 py-2 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none font-mono" placeholder="輸入此工程的細部設計提醒、線材預留、備用發電機或抗風拉繩等說明..."></textarea>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 頁籤3: 材料估算 -->
+      <div id="tabPanelBOM" class="p-4 sm:p-6 space-y-6 hidden">
+        
+        <div class="space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> 結構材料預估明細 (自動計算)
+            </h3>
+            <button id="btnResetPrices" class="text-[10px] text-amber-500/80 hover:text-amber-400 flex items-center gap-1">
+              <i class="fa-solid fa-rotate"></i> 重設單價
+            </button>
+          </div>
+
+          <div class="bg-slate-900/80 rounded-xl border border-slate-800 overflow-hidden divide-y divide-slate-800/60">
+            <!-- 2m Truss -->
+            <div class="p-3 flex items-center justify-between text-xs">
+              <div class="space-y-0.5 pr-2">
+                <span class="font-bold text-slate-200">2米 直型鋁合金桁架</span>
+                <p class="text-[10px] text-slate-400">主要立柱、橫樑與支撐組件</p>
+              </div>
+              <div class="flex items-center gap-2 sm:gap-4 shrink-0">
+                <span class="font-mono text-amber-400 font-semibold text-xs sm:text-sm" id="bomTruss2m">0 支</span>
+                <input type="number" id="priceTruss2m" value="1200" class="w-14 bg-slate-800 text-right px-1 py-0.5 rounded border border-slate-700 text-slate-300 font-mono text-[10px]" title="單價 (元)">
+              </div>
+            </div>
+
+            <!-- 1m Truss -->
+            <div class="p-3 flex items-center justify-between text-xs">
+              <div class="space-y-0.5 pr-2">
+                <span class="font-bold text-slate-200">1米 直型鋁合金桁架</span>
+                <p class="text-[10px] text-slate-400">高度與寬度尺寸微調件</p>
+              </div>
+              <div class="flex items-center gap-2 sm:gap-4 shrink-0">
+                <span class="font-mono text-amber-400 font-semibold text-xs sm:text-sm" id="bomTruss1m">0 支</span>
+                <input type="number" id="priceTruss1m" value="800" class="w-14 bg-slate-800 text-right px-1 py-0.5 rounded border border-slate-700 text-slate-300 font-mono text-[10px]" title="單價 (元)">
+              </div>
+            </div>
+
+            <!-- 角箱 Corner -->
+            <div class="p-3 flex items-center justify-between text-xs">
+              <div class="space-y-0.5 pr-2">
+                <span class="font-bold text-slate-200">六向桁架轉角箱 (Corner)</span>
+                <p class="text-[10px] text-slate-400">頂部兩側直角連結器</p>
+              </div>
+              <div class="flex items-center gap-2 sm:gap-4 shrink-0">
+                <span class="font-mono text-amber-400 font-semibold text-xs sm:text-sm" id="bomCorners">2 個</span>
+                <input type="number" id="priceCorner" value="1500" class="w-14 bg-slate-800 text-right px-1 py-0.5 rounded border border-slate-700 text-slate-300 font-mono text-[10px]" title="單價 (元)">
+              </div>
+            </div>
+
+            <!-- 底座 Base -->
+            <div class="p-3 flex items-center justify-between text-xs">
+              <div class="space-y-0.5 pr-2">
+                <span class="font-bold text-slate-200">重型鋼製配重底座 (Base)</span>
+                <p class="text-[10px] text-slate-400">地端立柱支撐與基礎配重</p>
+              </div>
+              <div class="flex items-center gap-2 sm:gap-4 shrink-0">
+                <span class="font-mono text-amber-400 font-semibold text-xs sm:text-sm" id="bomBases">2 個</span>
+                <input type="number" id="priceBase" value="1000" class="w-14 bg-slate-800 text-right px-1 py-0.5 rounded border border-slate-700 text-slate-300 font-mono text-[10px]" title="單價 (元)">
+              </div>
+            </div>
+
+            <!-- 舞台面板 / A字防風斜撐 (動態切換顯示) -->
+            <div class="p-3 flex items-center justify-between text-xs">
+              <div class="space-y-0.5 pr-2">
+                <span class="font-bold text-slate-200" id="bomDynamicItemName">舞台防滑板 (1x2米)</span>
+                <p class="text-[10px] text-slate-400" id="bomDynamicItemDesc">拼裝組合式高載重地台</p>
+              </div>
+              <div class="flex items-center gap-2 sm:gap-4 shrink-0">
+                <span class="font-mono text-amber-400 font-semibold text-xs sm:text-sm" id="bomDecks">0 片</span>
+                <input type="number" id="priceDeck" value="1600" class="w-14 bg-slate-800 text-right px-1 py-0.5 rounded border border-slate-700 text-slate-300 font-mono text-[10px]" title="單價 (元)">
+              </div>
+            </div>
+
+            <!-- 階梯 Step -->
+            <div class="p-3 flex items-center justify-between text-xs" id="bomStepRow">
+              <div class="space-y-0.5 pr-2">
+                <span class="font-bold text-slate-200">安全上台階梯</span>
+                <p class="text-[10px] text-slate-400">舞台專用左右登台梯</p>
+              </div>
+              <div class="flex items-center gap-2 sm:gap-4 shrink-0">
+                <span class="font-mono text-amber-400 font-semibold text-xs sm:text-sm" id="bomSteps">0 組</span>
+                <input type="number" id="priceStep" value="2500" class="w-14 bg-slate-800 text-right px-1 py-0.5 rounded border border-slate-700 text-slate-300 font-mono text-[10px]" title="單價 (元)">
+              </div>
+            </div>
+          </div>
+
+          <!-- 預估統計 -->
+          <div class="p-4 bg-slate-800/50 rounded-xl border border-slate-700/60 space-y-3">
+            <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">合計硬體預估與工時估算</h4>
+            
+            <div class="grid grid-cols-2 gap-3 text-xs">
+              <div class="bg-slate-900/60 p-2.5 rounded border border-slate-800">
+                <span class="text-slate-400 block mb-0.5 text-[10px] sm:text-xs font-medium">預估硬體預算 (租賃)</span>
+                <span class="font-mono text-xs sm:text-sm text-emerald-400 font-bold" id="bomTotalPrice">NT$ 0</span>
+              </div>
+              <div class="bg-slate-900/60 p-2.5 rounded border border-slate-800">
+                <span class="text-slate-400 block mb-0.5 text-[10px] sm:text-xs font-medium">預估搭設時間</span>
+                <span class="font-mono text-xs sm:text-sm text-indigo-400 font-bold" id="bomSetupTime">0.0 hr</span>
+              </div>
+            </div>
+            
+            <p class="text-[10px] text-slate-500 leading-relaxed italic">
+              *此材料清單估算為依據 3D 結構之基礎骨架預估。實際執行需考量燈光吊掛、馬達承重、配電、大圖輸出施工、背板結構拉繩及專業施工人員搬運費用。
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- 右側畫布預覽區域 -->
+    <section class="flex-1 bg-slate-950 flex flex-col relative min-h-[350px] lg:min-h-0">
+      
+      <!-- 畫布上方控制條 -->
+      <div class="px-4 sm:px-6 py-3 border-b border-slate-800 bg-slate-900/40 flex flex-wrap justify-between items-center gap-3 z-10">
+        <div class="flex items-center gap-2">
+          <!-- 視角切換器 -->
+          <span class="text-xs text-slate-400 font-medium hidden xs:inline">觀看視角：</span>
+          <div class="inline-flex rounded-lg p-0.5 bg-slate-800 border border-slate-700">
+            <button id="btnViewFront" class="px-2.5 sm:px-3 py-1 text-[11px] sm:text-xs font-medium rounded-md bg-indigo-600 text-white transition flex items-center gap-1">
+              <i class="fa-solid fa-square-poll-vertical text-[10px]"></i> 2D 正視圖
+            </button>
+            <button id="btnViewIso" class="px-2.5 sm:px-3 py-1 text-[11px] sm:text-xs font-medium rounded-md text-slate-400 hover:text-slate-200 transition flex items-center gap-1">
+              <i class="fa-solid fa-cube text-[10px]"></i> 3D 立體圖
+            </button>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3 sm:gap-4">
+          <!-- 縮放及復位 -->
+          <button id="btnZoomIn" class="text-slate-400 hover:text-slate-200 p-1 transition" title="放大縮放"><i class="fa-solid fa-magnifying-glass-plus text-sm"></i></button>
+          <button id="btnZoomOut" class="text-slate-400 hover:text-slate-200 p-1 transition" title="縮小縮放"><i class="fa-solid fa-magnifying-glass-minus text-sm"></i></button>
+          <button id="btnResetView" class="text-[11px] bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-2 py-1 rounded transition flex items-center gap-1">
+            <i class="fa-solid fa-arrows-to-eye"></i> 視角重設
+          </button>
+        </div>
+      </div>
+
+      <!-- Canvas 容器 (自動填滿) -->
+      <div class="flex-1 relative overflow-hidden" id="canvasContainer">
+        <!-- 即時提示浮窗 -->
+        <div class="absolute top-3 left-3 sm:top-4 sm:left-4 bg-slate-900/95 border border-slate-800/80 p-3 sm:p-4 rounded-xl shadow-2xl backdrop-blur-md z-10 pointer-events-none text-xs sm:text-sm space-y-1.5 max-w-[240px] sm:max-w-[280px]">
+          <span class="text-indigo-400 block font-bold tracking-wide text-sm sm:text-base">📐 場地與結構資訊</span>
+          <div class="flex justify-between font-mono"><span class="text-slate-500">結構用途:</span><span class="text-indigo-400 font-semibold" id="infoStructureType">舞台模式</span></div>
+          <div class="flex justify-between font-mono"><span class="text-slate-500">外部寬高:</span><span class="text-slate-200 font-semibold" id="infoStageDim">12.0 x 7.0 m</span></div>
+          <div class="flex justify-between font-mono" id="infoDeckRow"><span class="text-slate-500">舞台地台:</span><span class="text-slate-200 font-semibold" id="infoDeckDim">12.0 x 6.0 x 1.2 m</span></div>
+          <div class="flex justify-between font-mono"><span class="text-slate-500">畫面類型:</span><span class="text-emerald-400 font-semibold" id="infoBackdropType">LED 螢幕</span></div>
+          <div class="flex justify-between font-mono"><span class="text-slate-500">畫面尺寸:</span><span class="text-slate-200 font-semibold" id="infoScreenDim">8.0 x 4.0 m</span></div>
+          <div class="flex justify-between font-mono"><span class="text-slate-500">桁架規格:</span><span class="text-slate-200 font-semibold" id="infoTrussDim">40 cm (方型)</span></div>
+        </div>
+
+        <!-- 水印/指南 -->
+        <div class="absolute bottom-3 left-3 sm:bottom-4 sm:left-4 text-[9px] sm:text-[10px] text-slate-500 pointer-events-none z-10 select-none leading-relaxed bg-slate-950/40 p-2 rounded-lg backdrop-blur-[2px]">
+          拖曳 / 手勢操作指南：<br>
+          • 2D 模式：滑鼠或觸控直接「垂直拖曳」背景畫面以調整離地高度 Sy<br>
+          • 3D 模式：在畫面上按住並任意方向滑動，即可 360 度觀測立體結構與斜撐架設<br>
+          • 滾輪 / 雙指捏合：可無段進行整個系統的畫面縮放
+        </div>
+
+        <!-- 主 Canvas -->
+        <canvas id="stageCanvas" class="w-full h-full block cursor-grab active:cursor-grabbing"></canvas>
+      </div>
+
+      <!-- 底部狀態條 -->
+      <footer class="px-4 sm:px-6 py-2 border-t border-slate-800 bg-slate-900/60 flex justify-between items-center text-[10px] sm:text-xs text-slate-400">
+        <div class="flex items-center gap-4">
+          <span class="flex items-center gap-1"><i class="fa-solid fa-chart-area"></i> 全比例實時尺標註系統</span>
+          <span class="hidden md:inline border-l border-slate-800 pl-4 text-emerald-500 flex items-center gap-1">
+            <i class="fa-solid fa-circle-check"></i> 安全係數計算正常 (符合工程防風拉力法規)
+          </span>
+        </div>
+        <div id="mouseCoords" class="font-mono text-[10px] sm:text-[12px] text-slate-500">
+          滑鼠位置: X: 0.00m, Y: 0.00m
+        </div>
+      </footer>
+
+    </section>
+
+  </main>
+
+  <!-- 提示與反饋 Modal UI -->
+  <div id="messageModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center z-[100] p-4 transition-opacity duration-200 opacity-0">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl transform scale-95 transition-transform duration-200 space-y-4">
+      <div id="modalIcon" class="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-2xl mx-auto">
+        <i class="fa-solid fa-circle-check"></i>
+      </div>
+      <div class="text-center space-y-1">
+        <h3 id="modalTitle" class="text-base font-bold text-white">通知</h3>
+        <p id="modalMsg" class="text-xs text-slate-400 leading-relaxed">訊息內容</p>
+      </div>
+      <button id="modalBtnClose" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-2 rounded-lg text-sm font-medium transition">
+        我知道了
+      </button>
+    </div>
+  </div>
+
+  <!-- JavaScript 控制與渲染核心 -->
+  <script>
+    // ----------------------------------------------------
+    // 1. 初始化全域狀態與變數
+    // ----------------------------------------------------
+    const state = {
+      // 結構用途型式: 'stage' (專業舞台) 或 'photowall' (打卡牆/視覺牆)
+      structureType: 'stage', 
+      showSteps: true,       // 是否配置登台階梯
+
+      // 舞台數據
+      stageWidth: 12.0,   // 米 (m)
+      stageHeight: 7.0,   // 米 (m)
+      stageDepth: 6.0,    // 米 (m)
+      deckHeight: 1.2,    // 米 (m)
+      trussWidth: 0.4,    // 米 (m)
+      
+      // 背景/背板數據
+      backdropType: 'led', // 'led' / 'canvas' / 'none'
+      screenWidth: 8.0,   // 米 (m)
+      screenHeight: 4.0,  // 米 (m)
+      screenY: 1.5,       // 離地高度 (m)，此為螢幕下緣距離地面的高度
+
+      // 視覺樣式
+      trussColor: '#94a3b8',
+      screenBgColor: 'rgba(23, 37, 84, 0.75)',
+      screenBorderColor: 'rgba(59, 130, 246, 0.8)',
+      screenText: 'LIVE SHOW',
+      screenSubtext: 'STAGE VISUALIZER',
+      designNotes: '1. 本結構建議搭設於平整堅實、無積水地面。\n2. 帆布背板若遇 6 級以上強風建議卸下，以防風阻傾覆。\n3. 所有大功率配電與燈光、音響控制需符合一級防雨配線標準。',
+      braceDensity: 2, // 1: 稀疏, 2: 中, 3: 密
+      showDimensions: true,
+      showGrid: true,
+
+      // 視角與變形操作
+      viewMode: 'front', // 'front' (2D) 或 'iso' (3D)
+      zoom: 1.0,
+      panX: 0,
+      panY: 0,
+
+      // 3D 視角旋轉角度
+      isoRotationX: -20 * Math.PI / 180, // 上下傾角
+      isoRotationY: 45 * Math.PI / 180,  // 左右偏角
+
+      // 拖曳與觸控狀態
+      isDragging: false,
+      dragStart: { x: 0, y: 0 },
+      draggedTarget: null, // 'screen', 'pan', 'rotate3d'
+      screenBoundingBox: null
+    };
+
+    // 預設配置組
+    const presets = {
+      small: {
+        stageWidth: 8.0,
+        stageHeight: 5.0,
+        stageDepth: 4.0,
+        deckHeight: 0.8,
+        trussWidth: 0.3,
+        backdropType: 'canvas',
+        screenWidth: 5.0,
+        screenHeight: 3.0,
+        screenY: 1.0
+      },
+      medium: {
+        stageWidth: 12.0,
+        stageHeight: 7.0,
+        stageDepth: 6.0,
+        deckHeight: 1.2,
+        trussWidth: 0.4,
+        backdropType: 'led',
+        screenWidth: 8.0,
+        screenHeight: 4.0,
+        screenY: 1.5
+      },
+      large: {
+        stageWidth: 18.0,
+        stageHeight: 10.0,
+        stageDepth: 8.0,
+        deckHeight: 1.6,
+        trussWidth: 0.5,
+        backdropType: 'led',
+        screenWidth: 12.0,
+        screenHeight: 5.5,
+        screenY: 2.0
+      }
+    };
+
+    // 材料單價配置 (新台幣元/每日)
+    const prices = {
+      truss2m: 1200,
+      truss1m: 800,
+      corner: 1500,
+      base: 1000,
+      deck: 1600, // 舞台板或打卡牆後方支撐架單價
+      step: 2500
+    };
+
+    // 獲取 DOM 節點
+    const canvas = document.getElementById('stageCanvas');
+    const ctx = canvas.getContext('2d');
+    const canvasContainer = document.getElementById('canvasContainer');
+
+    // ----------------------------------------------------
+    // 2. DOM 事件連結與狀態同步
+    // ----------------------------------------------------
+    function initUI() {
+      // 頁籤切換
+      const tabBtns = [
+        { btn: 'tabBtnDimensions', panel: 'tabPanelDimensions' },
+        { btn: 'tabBtnStyle', panel: 'tabPanelStyle' },
+        { btn: 'tabBtnBOM', panel: 'tabPanelBOM' }
+      ];
+
+      tabBtns.forEach(({ btn, panel }) => {
+        document.getElementById(btn).addEventListener('click', () => {
+          tabBtns.forEach(t => {
+            const b = document.getElementById(t.btn);
+            const p = document.getElementById(t.panel);
+            b.classList.remove('border-indigo-500', 'text-indigo-400');
+            b.classList.add('border-transparent', 'text-slate-400');
+            p.classList.add('hidden');
+          });
+          const targetBtn = document.getElementById(btn);
+          targetBtn.classList.remove('border-transparent', 'text-slate-400');
+          targetBtn.classList.add('border-indigo-500', 'text-indigo-400');
+          document.getElementById(panel).classList.remove('hidden');
+        });
+      });
+
+      // 結構用途切換按鈕事件
+      const btnTypeStage = document.getElementById('btnTypeStage');
+      const btnTypePhotoWall = document.getElementById('btnTypePhotoWall');
+      
+      const deckHeightContainer = document.getElementById('deckHeightContainer');
+      const stepsToggleContainer = document.getElementById('stepsToggleContainer');
+      const depthContainer = document.getElementById('depthContainer');
+
+      btnTypeStage.addEventListener('click', () => {
+        setStructureType('stage');
+      });
+
+      btnTypePhotoWall.addEventListener('click', () => {
+        setStructureType('photowall');
+      });
+
+      function setStructureType(type) {
+        state.structureType = type;
+        if (type === 'stage') {
+          // 啟用舞台
+          btnTypeStage.className = "py-2.5 px-3 rounded-lg text-xs font-semibold border transition flex items-center justify-center gap-1.5 bg-indigo-600 border-indigo-500 text-white shadow-md shadow-indigo-600/15";
+          btnTypePhotoWall.className = "py-2.5 px-3 rounded-lg text-xs font-semibold border border-slate-700 bg-slate-800 text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-1.5";
+          
+          deckHeightContainer.classList.remove('opacity-30', 'pointer-events-none');
+          stepsToggleContainer.classList.remove('hidden');
+          depthContainer.classList.remove('hidden');
+
+          // 復原原本數值
+          const deckVal = parseFloat(document.getElementById('inputDeckHeight').value);
+          state.deckHeight = deckVal;
+
+          // 重新整理 BOM 欄位標籤
+          document.getElementById('bomDynamicItemName').innerText = "舞台防滑板 (1x2米)";
+          document.getElementById('bomDynamicItemDesc').innerText = "拼裝組合式高載重地台";
+          document.getElementById('bomStepRow').classList.remove('hidden');
+        } else {
+          // 啟用打卡牆面
+          btnTypePhotoWall.className = "py-2.5 px-3 rounded-lg text-xs font-semibold border transition flex items-center justify-center gap-1.5 bg-indigo-600 border-indigo-500 text-white shadow-md shadow-indigo-600/15";
+          btnTypeStage.className = "py-2.5 px-3 rounded-lg text-xs font-semibold border border-slate-700 bg-slate-800 text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-1.5";
+          
+          deckHeightContainer.classList.add('opacity-30', 'pointer-events-none');
+          stepsToggleContainer.classList.add('hidden');
+          depthContainer.classList.add('hidden');
+
+          // 打卡牆底座踢腳板固定為 0.1m
+          state.deckHeight = 0.1;
+          
+          // 若畫面離地高低於踢腳，強制貼齊底座 0.1m
+          if (state.screenY < 0.1) {
+            state.screenY = 0.1;
+            document.getElementById('inputScreenY').value = 0.1;
+            document.getElementById('valScreenY').innerText = "0.1 m";
+          }
+
+          // 重新整理 BOM 欄位標籤
+          document.getElementById('bomDynamicItemName').innerText = "A字防風後斜撐";
+          document.getElementById('bomDynamicItemDesc').innerText = "打卡視覺牆專用防傾倒支撑架";
+          document.getElementById('bomStepRow').classList.add('hidden');
+        }
+        updateVisualization();
+      }
+
+      // 階梯開關
+      const chkShowSteps = document.getElementById('chkShowSteps');
+      chkShowSteps.addEventListener('change', (e) => {
+        state.showSteps = e.target.checked;
+        updateVisualization();
+      });
+
+      // 綁定輸入滑桿與對應顯示值
+      bindInputRange('inputStageWidth', 'valStageWidth', 'stageWidth', 'm');
+      bindInputRange('inputStageHeight', 'valStageHeight', 'stageHeight', 'm');
+      bindInputRange('inputStageDepth', 'valStageDepth', 'stageDepth', 'm');
+      bindInputRange('inputDeckHeight', 'valDeckHeight', 'deckHeight', 'm');
+      bindInputRange('inputTrussWidth', 'valTrussWidth', 'trussWidth', 'cm', 100);
+
+      // 背景/背板切換
+      const backdropType = document.getElementById('backdropType');
+      const screenControls = document.getElementById('screenControls');
+      const lblBackdropWidth = document.getElementById('lblBackdropWidth');
+      const lblBackdropHeight = document.getElementById('lblBackdropHeight');
+
+      backdropType.addEventListener('change', (e) => {
+        state.backdropType = e.target.value;
+        if (state.backdropType === 'none') {
+          screenControls.classList.add('opacity-40', 'pointer-events-none');
+        } else {
+          screenControls.classList.remove('opacity-40', 'pointer-events-none');
+          if (state.backdropType === 'canvas') {
+            lblBackdropWidth.innerHTML = '<i class="fa-solid fa-scroll text-slate-500 w-4 text-center"></i> 帆布寬度 (Sw)';
+            lblBackdropHeight.innerHTML = '<i class="fa-solid fa-scroll rotate-90 text-slate-500 w-4 text-center"></i> 帆布高度 (Sh)';
+          } else {
+            lblBackdropWidth.innerHTML = '<i class="fa-solid fa-tablet-screen-button text-slate-500 w-4 text-center"></i> 螢幕寬度 (Sw)';
+            lblBackdropHeight.innerHTML = '<i class="fa-solid fa-tablet-screen-button rotate-90 text-slate-500 w-4 text-center"></i> 螢幕高度 (Sh)';
+          }
+        }
+        updateVisualization();
+      });
+
+      bindInputRange('inputScreenWidth', 'valScreenWidth', 'screenWidth', 'm');
+      bindInputRange('inputScreenHeight', 'valScreenHeight', 'screenHeight', 'm');
+      bindInputRange('inputScreenY', 'valScreenY', 'screenY', 'm');
+
+      // 綁定樣式頁面
+      const colorSwatches = document.querySelectorAll('.color-swatch');
+      colorSwatches.forEach(swatch => {
+        swatch.addEventListener('click', () => {
+          colorSwatches.forEach(s => s.classList.remove('ring-2', 'ring-white'));
+          swatch.classList.add('ring-2', 'ring-white');
+          state.trussColor = swatch.getAttribute('data-color');
+          updateVisualization();
+        });
+      });
+
+      const screenColors = document.querySelectorAll('.screen-color-swatch');
+      screenColors.forEach(swatch => {
+        swatch.addEventListener('click', () => {
+          screenColors.forEach(s => s.classList.remove('ring-2', 'ring-white'));
+          swatch.classList.add('ring-2', 'ring-white');
+          state.screenBgColor = swatch.getAttribute('data-color');
+          state.screenBorderColor = swatch.getAttribute('data-border');
+          updateVisualization();
+        });
+      });
+
+      // 繪圖輔助與功能開關
+      const chkShowDimensions = document.getElementById('chkShowDimensions');
+      chkShowDimensions.addEventListener('change', (e) => {
+        state.showDimensions = e.target.checked;
+        updateVisualization();
+      });
+
+      const chkShowGrid = document.getElementById('chkShowGrid');
+      chkShowGrid.addEventListener('change', (e) => {
+        state.showGrid = e.target.checked;
+        updateVisualization();
+      });
+
+      // 桁架交叉密度
+      const densityMap = { 1: '稀疏', 2: '適中', 3: '密' };
+      const inputBraceDensity = document.getElementById('inputBraceDensity');
+      inputBraceDensity.addEventListener('input', (e) => {
+        state.braceDensity = parseInt(e.target.value);
+        document.getElementById('valBraceDensity').innerText = densityMap[state.braceDensity];
+        updateVisualization();
+      });
+
+      // 自訂螢幕文字
+      const inputScreenText = document.getElementById('inputScreenText');
+      inputScreenText.addEventListener('input', (e) => {
+        state.screenText = e.target.value;
+        updateVisualization();
+      });
+      const inputScreenSubtext = document.getElementById('inputScreenSubtext');
+      inputScreenSubtext.addEventListener('input', (e) => {
+        state.screenSubtext = e.target.value;
+        updateVisualization();
+      });
+
+      // 自訂工程備註欄位
+      const inputNotes = document.getElementById('inputNotes');
+      inputNotes.value = state.designNotes;
+      inputNotes.addEventListener('input', (e) => {
+        state.designNotes = e.target.value;
+        updateVisualization();
+      });
+
+      // 視角切換按鈕
+      const btnViewFront = document.getElementById('btnViewFront');
+      const btnViewIso = document.getElementById('btnViewIso');
+
+      btnViewFront.addEventListener('click', () => {
+        btnViewFront.classList.add('bg-indigo-600', 'text-white');
+        btnViewFront.classList.remove('text-slate-400');
+        btnViewIso.classList.remove('bg-indigo-600', 'text-white');
+        btnViewIso.classList.add('text-slate-400');
+        state.viewMode = 'front';
+        resetView();
+      });
+
+      btnViewIso.addEventListener('click', () => {
+        btnViewIso.classList.add('bg-indigo-600', 'text-white');
+        btnViewIso.classList.remove('text-slate-400');
+        btnViewFront.classList.remove('bg-indigo-600', 'text-white');
+        btnViewFront.classList.add('text-slate-400');
+        state.viewMode = 'iso';
+        resetView();
+      });
+
+      // 縮放與重設
+      document.getElementById('btnZoomIn').addEventListener('click', () => {
+        state.zoom *= 1.15;
+        updateVisualization();
+      });
+      document.getElementById('btnZoomOut').addEventListener('click', () => {
+        state.zoom /= 1.15;
+        updateVisualization();
+      });
+      document.getElementById('btnResetView').addEventListener('click', () => {
+        resetView();
+      });
+
+      // 樣版下拉選單
+      const presetSelect = document.getElementById('presetSelect');
+      presetSelect.addEventListener('change', (e) => {
+        const key = e.target.value;
+        if (presets[key]) {
+          applyPreset(presets[key]);
+        }
+      });
+
+      // 報價與單價自訂事件
+      const priceInputs = ['priceTruss2m', 'priceTruss1m', 'priceCorner', 'priceBase', 'priceDeck', 'priceStep'];
+      priceInputs.forEach(id => {
+        document.getElementById(id).addEventListener('input', (e) => {
+          const val = parseFloat(e.target.value) || 0;
+          const key = id.replace('price', '').toLowerCase();
+          prices[key] = val;
+          calculateBOM();
+        });
+      });
+
+      document.getElementById('btnResetPrices').addEventListener('click', () => {
+        prices.truss2m = 1200;
+        prices.truss1m = 800;
+        prices.corner = 1500;
+        prices.base = 1000;
+        prices.deck = 1600;
+        prices.step = 2500;
+        priceInputs.forEach(id => {
+          const key = id.replace('price', '').toLowerCase();
+          document.getElementById(id).value = prices[key];
+        });
+        calculateBOM();
+        showNotification('已重設為活動硬體市場平均租賃單價。', 'success');
+      });
+
+      // 匯出圖面
+      document.getElementById('btnExport').addEventListener('click', () => {
+        exportAsBlueprintImage();
+      });
+
+      // 畫布 RWD 自動監聽
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+      });
+
+      // 手勢縮放 (雙指) 支援
+      let initialDist = 0;
+      canvas.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 2) {
+          e.preventDefault();
+          const dist = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+          );
+          if (initialDist > 0) {
+            const ratio = dist / initialDist;
+            state.zoom = Math.max(0.4, Math.min(3.0, state.zoom * (ratio > 1 ? 1.03 : 0.97)));
+            updateVisualization();
+          }
+          initialDist = dist;
+        }
+      }, { passive: false });
+
+      canvas.addEventListener('touchend', () => {
+        initialDist = 0;
+      });
+    }
+
+    // 綁定滑桿數值輔助函數
+    function bindInputRange(inputId, valId, stateKey, unit, divisor = 1) {
+      const input = document.getElementById(inputId);
+      const output = document.getElementById(valId);
+      input.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value);
+        state[stateKey] = val / divisor;
+        output.innerText = `${val} ${unit}`;
+        
+        // 防穿牆安全連鎖
+        if (stateKey === 'stageWidth') {
+          const maxScrWidth = Math.max(3, val - 1.0);
+          const scrInput = document.getElementById('inputScreenWidth');
+          scrInput.max = maxScrWidth;
+          if (state.screenWidth > maxScrWidth) {
+            state.screenWidth = maxScrWidth;
+            scrInput.value = maxScrWidth;
+            document.getElementById('valScreenWidth').innerText = `${maxScrWidth} m`;
+          }
+        }
+        if (stateKey === 'stageHeight') {
+          const maxScrHeight = Math.max(2, val - (state.structureType === 'stage' ? state.deckHeight : 0.1) - 0.8);
+          const scrHeightInput = document.getElementById('inputScreenHeight');
+          scrHeightInput.max = maxScrHeight;
+          if (state.screenHeight > maxScrHeight) {
+            state.screenHeight = maxScrHeight;
+            scrHeightInput.value = maxScrHeight;
+            document.getElementById('valScreenHeight').innerText = `${maxScrHeight} m`;
+          }
+        }
+
+        document.getElementById('presetSelect').value = 'custom';
+        updateVisualization();
+      });
+    }
+
+    function applyPreset(p) {
+      state.stageWidth = p.stageWidth;
+      state.stageHeight = p.stageHeight;
+      state.stageDepth = p.stageDepth;
+      // 依據目前型式決定地台高度
+      if (state.structureType === 'stage') {
+        state.deckHeight = p.deckHeight;
+      } else {
+        state.deckHeight = 0.1;
+      }
+      state.trussWidth = p.trussWidth;
+      state.backdropType = p.backdropType;
+      state.screenWidth = p.screenWidth;
+      state.screenHeight = p.screenHeight;
+      state.screenY = state.structureType === 'stage' ? p.screenY : Math.max(0.1, p.screenY);
+
+      // 同步 UI 畫面
+      document.getElementById('inputStageWidth').value = p.stageWidth;
+      document.getElementById('valStageWidth').innerText = `${p.stageWidth} m`;
+      document.getElementById('inputStageHeight').value = p.stageHeight;
+      document.getElementById('valStageHeight').innerText = `${p.stageHeight} m`;
+      document.getElementById('inputStageDepth').value = p.stageDepth;
+      document.getElementById('valStageDepth').innerText = `${p.stageDepth} m`;
+      
+      document.getElementById('inputDeckHeight').value = p.deckHeight;
+      document.getElementById('valDeckHeight').innerText = `${state.deckHeight} m`;
+      document.getElementById('inputTrussWidth').value = p.trussWidth * 100;
+      document.getElementById('valTrussWidth').innerText = `${p.trussWidth * 100} cm`;
+
+      document.getElementById('backdropType').value = p.backdropType;
+      document.getElementById('inputScreenWidth').value = p.screenWidth;
+      document.getElementById('valScreenWidth').innerText = `${p.screenWidth} m`;
+      document.getElementById('inputScreenHeight').value = p.screenHeight;
+      document.getElementById('valScreenHeight').innerText = `${p.screenHeight} m`;
+      document.getElementById('inputScreenY').value = state.screenY;
+      document.getElementById('valScreenY').innerText = `${state.screenY} m`;
+
+      const screenControls = document.getElementById('screenControls');
+      if (p.backdropType === 'none') {
+        screenControls.classList.add('opacity-40', 'pointer-events-none');
+      } else {
+        screenControls.classList.remove('opacity-40', 'pointer-events-none');
+      }
+
+      resetView();
+    }
+
+    function resetView() {
+      state.zoom = 1.0;
+      state.panX = 0;
+      state.panY = 0;
+      if (state.viewMode === 'iso') {
+        state.isoRotationX = -18 * Math.PI / 180;
+        state.isoRotationY = 35 * Math.PI / 180;
+      }
+      updateVisualization();
+    }
+
+    // 彈出式對話視窗
+    function showNotification(msg, type = 'success') {
+      const modal = document.getElementById('messageModal');
+      const icon = document.getElementById('modalIcon');
+      const title = document.getElementById('modalTitle');
+      const text = document.getElementById('modalMsg');
+
+      if (type === 'success') {
+        icon.className = 'w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-2xl mx-auto';
+        icon.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+        title.innerText = '系統通知';
+      } else {
+        icon.className = 'w-12 h-12 rounded-full bg-rose-500/10 text-rose-400 flex items-center justify-center text-2xl mx-auto';
+        icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+        title.innerText = '錯誤提醒';
+      }
+
+      text.innerText = msg;
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      setTimeout(() => {
+        modal.classList.add('opacity-100');
+        modal.querySelector('div').classList.add('scale-100');
+        modal.querySelector('div').classList.remove('scale-95');
+      }, 10);
+    }
+
+    document.getElementById('modalBtnClose').addEventListener('click', () => {
+      const modal = document.getElementById('messageModal');
+      modal.classList.remove('opacity-100');
+      modal.querySelector('div').classList.remove('scale-100');
+      modal.querySelector('div').classList.add('scale-95');
+      setTimeout(() => {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }, 200);
+    });
+
+    // ----------------------------------------------------
+    // 3. BOM 材料列表自動計算 (含舞台、打卡牆、無階梯動態分支)
+    // ----------------------------------------------------
+    function calculateBOM() {
+      const w = state.stageWidth;
+      const h = state.stageHeight;
+      const trussWidth = state.trussWidth;
+
+      const beamLength = w - 2 * trussWidth;
+      const columnLength = h;
+
+      let count2m = 0;
+      let count1m = 0;
+
+      function getPieces(length) {
+        if (length <= 0) return { p2: 0, p1: 0 };
+        let p2 = Math.floor(length / 2);
+        let remainder = length % 2;
+        let p1 = Math.ceil(remainder);
+        return { p2, p1 };
+      }
+
+      const leftCol = getPieces(columnLength);
+      const rightCol = getPieces(columnLength);
+      const mainBeam = getPieces(beamLength);
+
+      count2m = leftCol.p2 + rightCol.p2 + mainBeam.p2;
+      count1m = leftCol.p1 + rightCol.p1 + mainBeam.p1;
+
+      const countCorners = 2;
+      const countBases = 2;
+
+      let countDecks = 0;
+      let countSteps = 0;
+
+      if (state.structureType === 'stage') {
+        // 舞台模式：使用舞台面板，面積 = 舞台面寬 * 舞台深度
+        const area = w * state.stageDepth;
+        countDecks = Math.ceil(area / 2); // 每片為 1x2 米，因此除以 2
+
+        // 階梯數量：若啟用且地台夠高
+        if (state.showSteps) {
+          countSteps = state.deckHeight >= 1.2 ? 2 : 1;
+        } else {
+          countSteps = 0;
+        }
+      } else {
+        // 打卡牆模式：不需要舞台面板與階梯。
+        // 取而代之的是，每2米橫向寬度配置1組後方「斜撐防風支撐架」
+        countDecks = Math.max(2, Math.round(w / 2) + 1);
+        countSteps = 0;
+      }
+
+      // 更新 DOM
+      document.getElementById('bomTruss2m').innerText = `${count2m} 支`;
+      document.getElementById('bomTruss1m').innerText = `${count1m} 支`;
+      document.getElementById('bomCorners').innerText = `${countCorners} 個`;
+      document.getElementById('bomBases').innerText = `${countBases} 個`;
+      document.getElementById('bomDecks').innerText = state.structureType === 'stage' ? `${countDecks} 片` : `${countDecks} 組`;
+      document.getElementById('bomSteps').innerText = `${countSteps} 組`;
+
+      // 預算統計
+      const total = (count2m * prices.truss2m) +
+                    (count1m * prices.truss1m) +
+                    (countCorners * prices.corner) +
+                    (countBases * prices.base) +
+                    (countDecks * (prices.deck || 1600)) +
+                    (countSteps * prices.step);
+
+      document.getElementById('bomTotalPrice').innerText = `NT$ ${total.toLocaleString()}`;
+
+      // 搭設工時粗估
+      let setupHrs = ((count2m + count1m) * 0.22) + (countCorners + countBases) * 0.15 + 1.0;
+      if (state.structureType === 'stage') {
+        setupHrs += (countDecks * 0.09) + (countSteps * 0.4);
+      } else {
+        setupHrs += (countDecks * 0.15); // A字架安裝較快
+      }
+      document.getElementById('bomSetupTime').innerText = `${setupHrs.toFixed(1)} hr`;
+    }
+
+    // ----------------------------------------------------
+    // 4. 畫布解析度與大小重設
+    // ----------------------------------------------------
+    function resizeCanvas() {
+      const dpr = window.devicePixelRatio || 1;
+      const width = canvasContainer.clientWidth;
+      const height = canvasContainer.clientHeight;
+      
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
+      
+      ctx.scale(dpr, dpr);
+      updateVisualization();
+    }
+
+    // ----------------------------------------------------
+    // 5. 核心繪圖控制
+    // ----------------------------------------------------
+    function updateVisualization() {
+      const w = canvas.width / (window.devicePixelRatio || 1);
+      const h = canvas.height / (window.devicePixelRatio || 1);
+      
+      // 網頁預覽背景
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = '#090d16'; 
+      ctx.fillRect(0, 0, w, h);
+
+      updateInfoDashboard();
+      calculateBOM();
+
+      if (state.viewMode === 'front') {
+        drawStage2D(ctx, w, h, false);
+      } else {
+        drawStage3D(ctx, w, h, false);
+      }
+    }
+
+    // 更新資訊看板
+    function updateInfoDashboard() {
+      const sTypeLabel = state.structureType === 'stage' ? '專業舞台系統' : '打卡牆/視覺牆系統';
+      document.getElementById('infoStructureType').innerText = sTypeLabel;
+      
+      document.getElementById('infoStageDim').innerText = `${state.stageWidth.toFixed(1)} x ${state.stageHeight.toFixed(1)} m`;
+      
+      if (state.structureType === 'stage') {
+        document.getElementById('infoDeckRow').classList.remove('hidden');
+        document.getElementById('infoDeckDim').innerText = `${state.stageWidth.toFixed(1)} x ${state.stageDepth.toFixed(1)} x ${state.deckHeight.toFixed(1)} m`;
+      } else {
+        document.getElementById('infoDeckRow').classList.add('hidden'); // 打卡牆不需顯示舞台面積資訊
+      }
+      
+      const typeText = { 'led': 'LED 背景螢幕', 'canvas': '輸出帆布背板', 'none': '無配置' };
+      document.getElementById('infoBackdropType').innerText = typeText[state.backdropType];
+
+      if (state.backdropType !== 'none') {
+        document.getElementById('infoScreenDim').innerText = `${state.screenWidth.toFixed(1)} x ${state.screenHeight.toFixed(1)} m (地高 ${state.screenY.toFixed(1)}m)`;
+      } else {
+        document.getElementById('infoScreenDim').innerText = '無配置';
+      }
+      document.getElementById('infoTrussDim').innerText = `${Math.round(state.trussWidth * 100)} cm`;
+    }
+
+    // -------------------
+    // 5A. 2D 視角繪圖核心
+    // -------------------
+    function drawStage2D(targetCtx, canvasW, canvasH, isExportMode = false) {
+      const padding = 80;
+      const totalDrawWidth = state.stageWidth + 3.0; 
+      const totalDrawHeight = state.stageHeight + 2.5; 
+      
+      const scaleX = (canvasW - padding * 2) / totalDrawWidth;
+      const scaleY = (canvasH - padding * 2) / totalDrawHeight;
+      const scale = Math.min(scaleX, scaleY) * (isExportMode ? 1.05 : state.zoom);
+
+      // 原點 X, 地面 Y 軸 (匯出時在 y: 730 空間下 originY 被精確限制，防文字重疊壓圖)
+      const originX = canvasW / 2 + (isExportMode ? 0 : state.panX);
+      const originY = canvasH - padding - 40 + (isExportMode ? 0 : state.panY);
+
+      const toPxX = (mX) => originX + mX * scale;
+      const toPxY = (mY) => originY - mY * scale; 
+      const toPxSize = (mSize) => mSize * scale;
+
+      // 配色主題切換 (isExportMode = true 為純白底黑字規範)
+      const theme = {
+        bg: isExportMode ? '#ffffff' : '#090d16',
+        groundLine: isExportMode ? '#000000' : '#334155',
+        trussColor: isExportMode ? '#000000' : state.trussColor,
+        trussBracing: isExportMode ? 'rgba(0,0,0,0.4)' : adjustHexOpacity(state.trussColor, 0.7),
+        deckFill: isExportMode ? '#f8fafc' : '#1e293b',
+        deckBorder: isExportMode ? '#000000' : '#475569',
+        deckGrid: isExportMode ? '#cccccc' : '#334155',
+        backdropFill: isExportMode ? '#f1f5f9' : state.screenBgColor,
+        backdropBorder: isExportMode ? '#000000' : state.screenBorderColor,
+        backdropText: isExportMode ? '#000000' : '#ffffff',
+        backdropSubtext: isExportMode ? '#444444' : 'rgba(255, 255, 255, 0.6)',
+        dimColor: isExportMode ? '#000000' : '#f59e0b',
+        dimLine: isExportMode ? 'rgba(0, 0, 0, 0.5)' : 'rgba(245, 158, 11, 0.6)',
+        dimExtension: isExportMode ? 'rgba(0, 0, 0, 0.15)' : 'rgba(245, 158, 11, 0.25)',
+        text: isExportMode ? '#000000' : '#ffffff'
+      };
+
+      // 繪製工程格網線
+      if (state.showGrid && !isExportMode) {
+        drawEngineeringGrid(targetCtx, canvasW, canvasH, originX, originY, scale);
+      } else if (isExportMode) {
+        // 匯出時背景全白，畫上極淡的淡灰參考線
+        targetCtx.strokeStyle = '#f8fafc';
+        targetCtx.lineWidth = 0.5;
+        const gridSpacing = scale; 
+        for (let ix = originX % gridSpacing; ix < canvasW; ix += gridSpacing) {
+          targetCtx.beginPath(); targetCtx.moveTo(ix, 0); targetCtx.lineTo(ix, canvasH); targetCtx.stroke();
+        }
+        for (let iy = originY % gridSpacing; iy < canvasH; iy += gridSpacing) {
+          targetCtx.beginPath(); targetCtx.moveTo(0, iy); targetCtx.lineTo(canvasW, iy); targetCtx.stroke();
+        }
+      }
+
+      // 地面底線
+      targetCtx.strokeStyle = theme.groundLine;
+      targetCtx.lineWidth = isExportMode ? 3 : 2;
+      targetCtx.beginPath();
+      targetCtx.moveTo(0, originY);
+      targetCtx.lineTo(canvasW, originY);
+      targetCtx.stroke();
+
+      // 2. 繪製背景畫面 (LED / 帆布)
+      let screenRect = null;
+      if (state.backdropType !== 'none') {
+        const sw = state.screenWidth;
+        const sh = state.screenHeight;
+        const sY = state.screenY;
+
+        const sLeft = -sw / 2;
+        const sBottom = sY;
+
+        const sLeftPx = toPxX(sLeft);
+        const sTopPx = toPxY(sBottom + sh);
+        const sWidthPx = toPxSize(sw);
+        const sHeightPx = toPxSize(sh);
+
+        screenRect = { x: sLeftPx, y: sTopPx, w: sWidthPx, h: sHeightPx };
+
+        targetCtx.save();
+        if (!isExportMode) {
+          targetCtx.shadowColor = theme.backdropBorder;
+          targetCtx.shadowBlur = 12;
+        }
+        targetCtx.fillStyle = theme.backdropFill;
+        targetCtx.fillRect(sLeftPx, sTopPx, sWidthPx, sHeightPx);
+        targetCtx.restore();
+
+        targetCtx.strokeStyle = theme.backdropBorder;
+        targetCtx.lineWidth = isExportMode ? 2 : 3;
+        targetCtx.strokeRect(sLeftPx, sTopPx, sWidthPx, sHeightPx);
+
+        if (state.backdropType === 'led') {
+          if (!isExportMode) {
+            targetCtx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+            targetCtx.lineWidth = 1;
+            const gap = 8;
+            for (let ix = sLeftPx; ix < sLeftPx + sWidthPx; ix += gap) {
+              targetCtx.beginPath(); targetCtx.moveTo(ix, sTopPx); targetCtx.lineTo(ix, sTopPx + sHeightPx); targetCtx.stroke();
+            }
+          } else {
+            targetCtx.fillStyle = 'rgba(0, 0, 0, 0.04)';
+            targetCtx.font = "italic bold 12px 'JetBrains Mono'";
+            targetCtx.textAlign = 'left';
+            targetCtx.fillText("LED DIGITAL MULTIMEDIA", sLeftPx + 10, sTopPx + 20);
+          }
+        } else if (state.backdropType === 'canvas') {
+          targetCtx.save();
+          targetCtx.strokeStyle = isExportMode ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.2)';
+          targetCtx.lineWidth = 1;
+          const grommetGap = toPxSize(0.5); 
+          targetCtx.fillStyle = isExportMode ? '#ffffff' : '#475569';
+          for (let gx = sLeftPx; gx <= sLeftPx + sWidthPx; gx += grommetGap) {
+            targetCtx.beginPath(); targetCtx.arc(gx, sTopPx + 4, 3, 0, Math.PI * 2); targetCtx.fill(); targetCtx.stroke();
+            targetCtx.beginPath(); targetCtx.arc(gx, sTopPx + sHeightPx - 4, 3, 0, Math.PI * 2); targetCtx.fill(); targetCtx.stroke();
+          }
+          targetCtx.restore();
+
+          if (isExportMode) {
+            targetCtx.fillStyle = 'rgba(0, 0, 0, 0.04)';
+            targetCtx.font = "italic bold 12px 'JetBrains Mono'";
+            targetCtx.textAlign = 'left';
+            targetCtx.fillText("大圖防撕帆布輸出背景牆", sLeftPx + 10, sTopPx + 20);
+          }
+        }
+
+        // 螢幕上顯示自訂文字 (字型加大)
+        targetCtx.fillStyle = theme.backdropText;
+        targetCtx.textAlign = 'center';
+        targetCtx.textBaseline = 'middle';
+        targetCtx.font = `900 ${Math.max(18, toPxSize(0.65))}px 'Noto Sans TC'`;
+        targetCtx.fillText(state.screenText, sLeftPx + sWidthPx / 2, sTopPx + sHeightPx / 2 - toPxSize(0.12));
+
+        targetCtx.fillStyle = theme.backdropSubtext;
+        targetCtx.font = `500 ${Math.max(12, toPxSize(0.3))}px 'JetBrains Mono'`;
+        targetCtx.fillText(state.screenSubtext, sLeftPx + sWidthPx / 2, sTopPx + sHeightPx / 2 + toPxSize(0.3));
+
+        // 懸吊吊點(舞台模式) 或 固定拉繩(打卡牆)
+        targetCtx.strokeStyle = isExportMode ? '#000000' : '#64748b';
+        targetCtx.lineWidth = isExportMode ? 1.5 : 1.2;
+        const beamTopY = state.stageHeight - state.trussWidth;
+        const ropeX1 = toPxX(-sw / 2 + 0.4);
+        const ropeX2 = toPxX(sw / 2 - 0.4);
+        targetCtx.beginPath();
+        targetCtx.moveTo(ropeX1, sTopPx);
+        targetCtx.lineTo(ropeX1, toPxY(beamTopY));
+        targetCtx.moveTo(ropeX2, sTopPx);
+        targetCtx.lineTo(ropeX2, toPxY(beamTopY));
+        targetCtx.stroke();
+      }
+
+      // 3. 繪製舞台地台(Stage Deck) 或 打卡牆底部底框
+      const sdW = state.stageWidth;
+      const sdH = state.deckHeight; // 舞台模式為設定值，打卡牆模式為極薄底 0.1m
+      const sdLeftPx = toPxX(-sdW / 2);
+      const sdTopPx = toPxY(sdH);
+      const sdWidthPx = toPxSize(sdW);
+      const sdHeightPx = toPxSize(sdH);
+
+      targetCtx.fillStyle = theme.deckFill;
+      targetCtx.fillRect(sdLeftPx, sdTopPx, sdWidthPx, sdHeightPx);
+      
+      targetCtx.strokeStyle = theme.deckBorder;
+      targetCtx.lineWidth = isExportMode ? 2.5 : 2;
+      targetCtx.strokeRect(sdLeftPx, sdTopPx, sdWidthPx, sdHeightPx);
+
+      if (state.structureType === 'stage') {
+        // 舞台專用拼接鋪面格線示意
+        targetCtx.strokeStyle = theme.deckGrid;
+        targetCtx.lineWidth = 0.8;
+        const deckColW = toPxSize(2); 
+        for (let ix = sdLeftPx + deckColW; ix < sdLeftPx + sdWidthPx - 2; ix += deckColW) {
+          targetCtx.beginPath();
+          targetCtx.moveTo(ix, sdTopPx);
+          targetCtx.lineTo(ix, sdTopPx + sdHeightPx);
+          targetCtx.stroke();
+        }
+
+        // 地台支架腳座
+        targetCtx.strokeStyle = theme.deckGrid;
+        const feetSpacing = toPxSize(1);
+        for (let ix = sdLeftPx; ix <= sdLeftPx + sdWidthPx; ix += feetSpacing) {
+          targetCtx.beginPath();
+          targetCtx.moveTo(ix, sdTopPx + sdHeightPx);
+          targetCtx.lineTo(ix, sdTopPx);
+          targetCtx.stroke();
+        }
+
+        // 4. 安全登台階梯 (僅在舞台模式，且啟用 showSteps 時繪製)
+        if (state.showSteps) {
+          const stepWPx = toPxSize(1.6);
+          const stepHPx = sdHeightPx / 3;
+          const stepX = toPxX(0) - stepWPx / 2;
+          targetCtx.fillStyle = isExportMode ? '#ffffff' : '#0f172a';
+          targetCtx.strokeStyle = theme.deckBorder;
+          targetCtx.lineWidth = 1.2;
+          for (let i = 0; i < 3; i++) {
+            const offset = i * (stepWPx / 6);
+            const curW = stepWPx - offset * 2;
+            const curY = originY - stepHPx * (i + 1);
+            targetCtx.fillRect(stepX + offset, curY, curW, stepHPx);
+            targetCtx.strokeRect(stepX + offset, curY, curW, stepHPx);
+          }
+        }
+      } else {
+        // 打卡牆視覺樣式：繪製一個帶有簡潔裝飾的底邊踢腳線，不繪製舞台腳架與階梯
+        targetCtx.fillStyle = isExportMode ? '#dddddd' : '#334155';
+        targetCtx.fillRect(sdLeftPx, sdTopPx, sdWidthPx, sdHeightPx);
+      }
+
+      // 5. 繪製鋁合金桁架骨架結構
+      const tW = state.trussWidth;
+      const sH = state.stageHeight;
+
+      // 兩側立柱中心
+      const leftColX = -sdW / 2 + tW / 2;
+      const rightColX = sdW / 2 - tW / 2;
+
+      // 繪製左右兩支立柱
+      drawTruss2D_internal(targetCtx, toPxX(leftColX - tW / 2), toPxY(sH), toPxSize(tW), toPxSize(sH), 'vertical', theme.trussColor, theme.trussBracing);
+      drawTruss2D_internal(targetCtx, toPxX(rightColX - tW / 2), toPxY(sH), toPxSize(tW), toPxSize(sH), 'vertical', theme.trussColor, theme.trussBracing);
+
+      // 繪製頂部橫樑
+      const topBeamLeftX = leftColX - tW / 2;
+      const topBeamWidth = sdW;
+      drawTruss2D_internal(targetCtx, toPxX(topBeamLeftX), toPxY(sH), toPxSize(topBeamWidth), toPxSize(tW), 'horizontal', theme.trussColor, theme.trussBracing);
+
+      // 頂部兩端轉角箱 (Corner Box)
+      targetCtx.fillStyle = isExportMode ? '#ffffff' : '#475569';
+      targetCtx.strokeStyle = theme.trussColor;
+      targetCtx.lineWidth = 1.5;
+      const boxSize = toPxSize(tW + 0.05);
+      targetCtx.fillRect(toPxX(leftColX - tW / 2 - 0.025), toPxY(sH + 0.025), boxSize, boxSize);
+      targetCtx.strokeRect(toPxX(leftColX - tW / 2 - 0.025), toPxY(sH + 0.025), boxSize, boxSize);
+      targetCtx.fillRect(toPxX(rightColX - tW / 2 - 0.025), toPxY(sH + 0.025), boxSize, boxSize);
+      targetCtx.strokeRect(toPxX(rightColX - tW / 2 - 0.025), toPxY(sH + 0.025), boxSize, boxSize);
+
+      // 鋼製配重底座
+      targetCtx.fillStyle = isExportMode ? '#ffffff' : '#334155';
+      targetCtx.strokeStyle = theme.trussColor;
+      const baseWPx = toPxSize(tW * 1.8);
+      const baseHPx = toPxSize(0.12);
+      targetCtx.fillRect(toPxX(leftColX) - baseWPx / 2, originY - baseHPx, baseWPx, baseHPx);
+      targetCtx.strokeRect(toPxX(leftColX) - baseWPx / 2, originY - baseHPx, baseWPx, baseHPx);
+
+      targetCtx.fillRect(toPxX(rightColX) - baseWPx / 2, originY - baseHPx, baseWPx, baseHPx);
+      targetCtx.strokeRect(toPxX(rightColX) - baseWPx / 2, originY - baseHPx, baseWPx, baseHPx);
+
+      // 6. 工程標註標線 (Dimensioning Lines) (字級全面加大)
+      if (state.showDimensions) {
+        targetCtx.save();
+        targetCtx.fillStyle = theme.dimColor;
+        targetCtx.strokeStyle = theme.dimLine;
+        targetCtx.font = `bold ${isExportMode ? 15 : 14}px 'JetBrains Mono', 'Noto Sans TC'`;
+
+        // 標註：總寬度
+        drawDimensionLine_internal(targetCtx, toPxX(-sdW / 2), toPxY(sH + 0.8), toPxX(sdW / 2), toPxY(sH + 0.8), 20, `${sdW.toFixed(2)} m (總寬度 W)`, 'horizontal', theme);
+
+        // 標註：總高度
+        drawDimensionLine_internal(targetCtx, toPxX(-sdW / 2 - 0.8), toPxY(0), toPxX(-sdW / 2 - 0.8), toPxY(sH), -20, `${sH.toFixed(2)} m (桁架高度 H)`, 'vertical', theme);
+
+        if (state.structureType === 'stage') {
+          // 標註：舞台高度 (僅舞台模式)
+          drawDimensionLine_internal(targetCtx, toPxX(sdW / 2 + 0.5), toPxY(0), toPxX(sdW / 2 + 0.5), toPxY(sdH), 15, `${sdH.toFixed(2)} m (平台高度 Sh)`, 'vertical', theme);
+        } else {
+          // 標註：踢腳板高度 (打卡牆模式)
+          drawDimensionLine_internal(targetCtx, toPxX(sdW / 2 + 0.5), toPxY(0), toPxX(sdW / 2 + 0.5), toPxY(0.1), 15, `${(0.1).toFixed(2)} m (底框座)`, 'vertical', theme);
+        }
+
+        // 標註：桁架管徑
+        drawDimensionLine_internal(targetCtx, toPxX(leftColX + tW / 2), toPxY(sH - tW), toPxX(leftColX + tW / 2), toPxY(sH), 10, `${Math.round(tW * 100)}cm`, 'vertical-small', theme);
+
+        // 背景/背板畫面標線
+        if (state.backdropType !== 'none') {
+          const sw = state.screenWidth;
+          const sh = state.screenHeight;
+          const sY = state.screenY;
+          const mediaLabel = state.backdropType === 'led' ? '螢幕' : '帆布';
+          
+          drawDimensionLine_internal(targetCtx, toPxX(-sw / 2), toPxY(sY + sh + 0.3), toPxX(sw / 2), toPxY(sY + sh + 0.3), 10, `${mediaLabel}寬: ${sw.toFixed(2)} m`, 'horizontal', theme);
+          drawDimensionLine_internal(targetCtx, toPxX(sw / 2 + 0.3), toPxY(sY), toPxX(sw / 2 + 0.3), toPxY(sY + sh), 15, `${mediaLabel}高: ${sh.toFixed(2)} m`, 'vertical-small', theme);
+          drawDimensionLine_internal(targetCtx, toPxX(-sw / 2 - 0.3), toPxY(0), toPxX(-sw / 2 - 0.3), toPxY(sY), -15, `離地: ${sY.toFixed(2)} m`, 'vertical-small', theme);
+        }
+
+        targetCtx.restore();
+      }
+
+      // 非匯出模式下，建立拖曳熱區
+      if (!isExportMode && state.backdropType !== 'none' && screenRect) {
+        state.screenBoundingBox = screenRect;
+      } else {
+        state.screenBoundingBox = null;
+      }
+    }
+
+    // -------------------
+    // 5B. 3D 立體投影繪圖核心 (含打卡牆後方斜撐繪製)
+    // -------------------
+    function drawStage3D(targetCtx, canvasW, canvasH, isExportMode = false) {
+      const scale = (isExportMode ? 42 : 36) * state.zoom;
+      // 匯出時適度將 originY 往上推 (40), 防 3D 立體深度往 Z 軸延伸時壓到下方表格文字
+      const originX = canvasW / 2 + (isExportMode ? 0 : state.panX);
+      const originY = canvasH / 2 + (isExportMode ? 40 : 100) + (isExportMode ? 0 : state.panY);
+
+      function project3D(x, y, z) {
+        let x1 = x * Math.cos(state.isoRotationY) - z * Math.sin(state.isoRotationY);
+        let z1 = x * Math.sin(state.isoRotationY) + z * Math.cos(state.isoRotationY);
+
+        let y2 = y * Math.cos(state.isoRotationX) - z1 * Math.sin(state.isoRotationX);
+        let z2 = y * Math.sin(state.isoRotationX) + z1 * Math.cos(state.isoRotationX);
+
+        return {
+          x: originX + x1 * scale,
+          y: originY - y2 * scale,
+          depth: z2
+        };
+      }
+
+      const theme = {
+        gridLine: isExportMode ? '#f1f5f9' : 'rgba(30, 41, 59, 0.6)',
+        trussColor: isExportMode ? '#000000' : state.trussColor,
+        trussBracing: isExportMode ? 'rgba(0,0,0,0.3)' : adjustHexOpacity(state.trussColor, 0.5),
+        deckTop: isExportMode ? '#f8fafc' : '#1e293b',
+        deckFront: isExportMode ? '#f1f5f9' : '#0f172a',
+        deckSide: isExportMode ? '#e2e8f0' : '#111827',
+        deckBorder: isExportMode ? '#000000' : '#475569',
+        backdropFill: isExportMode ? '#f1f5f9' : state.screenBgColor,
+        backdropBorder: isExportMode ? '#000000' : state.screenBorderColor,
+        backdropText: isExportMode ? '#000000' : '#ffffff',
+        backdropSubtext: isExportMode ? '#444444' : 'rgba(255, 255, 255, 0.6)',
+        dimColor: isExportMode ? '#000000' : '#f59e0b',
+        dimLine: isExportMode ? 'rgba(0,0,0,0.5)' : 'rgba(245, 158, 11, 0.6)'
+      };
+
+      // 3D 底座地面大網格
+      if (state.showGrid) {
+        draw3DGrid_internal(targetCtx, project3D, state.stageWidth, state.stageDepth, theme.gridLine);
+      }
+
+      const renderQueue = [];
+
+      const w = state.stageWidth;
+      const d = state.stageDepth;
+      const sh = state.deckHeight; // 舞台高度 或 踢腳0.1m
+
+      // 1. 地台或是底座結構繪製
+      renderQueue.push({
+        type: 'stage_deck',
+        depth: 0,
+        draw: () => {
+          const p1 = project3D(-w/2, 0, -d/2);
+          const p2 = project3D(w/2, 0, -d/2);
+          const p3 = project3D(w/2, 0, d/2);
+          const p4 = project3D(-w/2, 0, d/2);
+
+          const p5 = project3D(-w/2, sh, -d/2);
+          const p6 = project3D(w/2, sh, -d/2);
+          const p7 = project3D(w/2, sh, d/2);
+          const p8 = project3D(-w/2, sh, d/2);
+
+          // 頂面
+          targetCtx.fillStyle = theme.deckTop;
+          targetCtx.strokeStyle = theme.deckBorder;
+          targetCtx.lineWidth = isExportMode ? 1.5 : 1.2;
+          targetCtx.beginPath();
+          targetCtx.moveTo(p5.x, p5.y); targetCtx.lineTo(p6.x, p6.y); targetCtx.lineTo(p7.x, p7.y); targetCtx.lineTo(p8.x, p8.y);
+          targetCtx.closePath();
+          targetCtx.fill(); targetCtx.stroke();
+
+          if (state.structureType === 'stage') {
+            // 頂部拼裝格線 (僅舞台模式)
+            targetCtx.strokeStyle = isExportMode ? '#e2e8f0' : '#334155';
+            targetCtx.lineWidth = 0.8;
+            for (let oz = -d/2 + 1; oz < d/2; oz += 1) {
+              const l1 = project3D(-w/2, sh, oz);
+              const l2 = project3D(w/2, sh, oz);
+              targetCtx.beginPath(); targetCtx.moveTo(l1.x, l1.y); targetCtx.lineTo(l2.x, l2.y); targetCtx.stroke();
+            }
+          }
+
+          // 前立面
+          targetCtx.fillStyle = theme.deckFront;
+          targetCtx.beginPath();
+          targetCtx.moveTo(p4.x, p4.y); targetCtx.lineTo(p3.x, p3.y); targetCtx.lineTo(p7.x, p7.y); targetCtx.lineTo(p8.x, p8.y);
+          targetCtx.closePath();
+          targetCtx.fill(); targetCtx.stroke();
+
+          // 側立面
+          targetCtx.fillStyle = theme.deckSide;
+          targetCtx.beginPath();
+          targetCtx.moveTo(p3.x, p3.y); targetCtx.lineTo(p2.x, p2.y); targetCtx.lineTo(p6.x, p6.y); targetCtx.lineTo(p7.x, p7.y);
+          targetCtx.closePath();
+          targetCtx.fill(); targetCtx.stroke();
+        }
+      });
+
+      // 2. 桁架兩側立柱
+      const tW = state.trussWidth;
+      const sH = state.stageHeight;
+      const leftColX = -w / 2 + tW / 2;
+      const rightColX = w / 2 - tW / 2;
+
+      renderQueue.push({
+        type: 'truss_pillars',
+        depth: -1,
+        draw: () => {
+          draw3DTrussColumn_internal(targetCtx, project3D, leftColX, sH, tW, theme.trussColor, theme.trussBracing, isExportMode);
+          draw3DTrussColumn_internal(targetCtx, project3D, rightColX, sH, tW, theme.trussColor, theme.trussBracing, isExportMode);
+        }
+      });
+
+      // 3. 頂部橫樑
+      renderQueue.push({
+        type: 'truss_beam',
+        depth: 1, 
+        draw: () => {
+          draw3DTrussBeam_internal(targetCtx, project3D, w, sH, tW, theme.trussColor, theme.trussBracing);
+        }
+      });
+
+      // 4. 背景背板本體 (LED 牆 或 帆布牆)
+      if (state.backdropType !== 'none') {
+        const sw = state.screenWidth;
+        const sh = state.screenHeight;
+        const sY = state.screenY;
+        const sZ = -d/4; // 稍微靠後定位
+
+        renderQueue.push({
+          type: 'led_screen',
+          depth: 2,
+          draw: () => {
+            const p1 = project3D(-sw/2, sY, sZ);
+            const p2 = project3D(sw/2, sY, sZ);
+            const p3 = project3D(sw/2, sY + sh, sZ);
+            const p4 = project3D(-sw/2, sY + sh, sZ);
+
+            // 鋼索/吊件 吊掛
+            targetCtx.strokeStyle = isExportMode ? '#000000' : '#64748b';
+            targetCtx.lineWidth = 1.2;
+            const rope1_bot = project3D(-sw/2 + 0.4, sY + sh, sZ);
+            const rope1_top = project3D(-sw/2 + 0.4, sH - tW, sZ);
+            const rope2_bot = project3D(sw/2 - 0.4, sY + sh, sZ);
+            const rope2_top = project3D(sw/2 - 0.4, sH - tW, sZ);
+            targetCtx.beginPath();
+            targetCtx.moveTo(rope1_bot.x, rope1_bot.y); targetCtx.lineTo(rope1_top.x, rope1_top.y);
+            targetCtx.moveTo(rope2_bot.x, rope2_bot.y); targetCtx.lineTo(rope2_top.x, rope2_top.y);
+            targetCtx.stroke();
+
+            // 畫面填充色
+            targetCtx.save();
+            if (!isExportMode) {
+              targetCtx.shadowColor = theme.backdropBorder;
+              targetCtx.shadowBlur = 15;
+            }
+            targetCtx.fillStyle = theme.backdropFill;
+            targetCtx.beginPath();
+            targetCtx.moveTo(p1.x, p1.y); targetCtx.lineTo(p2.x, p2.y); targetCtx.lineTo(p3.x, p3.y); targetCtx.lineTo(p4.x, p4.y);
+            targetCtx.closePath();
+            targetCtx.fill();
+            targetCtx.restore();
+
+            targetCtx.strokeStyle = theme.backdropBorder;
+            targetCtx.lineWidth = isExportMode ? 1.8 : 2.5;
+            targetCtx.stroke();
+
+            // 自訂文字 3D 投影定位繪製 (加大)
+            targetCtx.fillStyle = theme.backdropText;
+            targetCtx.textAlign = 'center';
+            targetCtx.textBaseline = 'middle';
+            targetCtx.font = `bold ${Math.max(16, scale * 0.55)}px 'Noto Sans TC'`;
+            
+            const centerPx = project3D(0, sY + sh/2, sZ);
+            targetCtx.fillText(state.screenText, centerPx.x, centerPx.y - scale * 0.08);
+            
+            targetCtx.fillStyle = theme.backdropSubtext;
+            targetCtx.font = `500 ${Math.max(11, scale * 0.25)}px 'JetBrains Mono'`;
+            targetCtx.fillText(state.screenSubtext, centerPx.x, centerPx.y + scale * 0.22);
+          }
+        });
+      }
+
+      // 5. 特殊結構渲染：如果是「打卡牆」模式，在 3D 繪製「後方防倒 A 字斜撐骨架」
+      if (state.structureType === 'photowall') {
+        renderQueue.push({
+          type: 'photowall_bracing',
+          depth: 3, // 放在背面深度
+          draw: () => {
+            targetCtx.strokeStyle = isExportMode ? '#000000' : 'rgba(255, 255, 255, 0.45)';
+            targetCtx.lineWidth = 1.5;
+            
+            // 每間隔 2 米畫一支後方斜撐
+            const spacing = 2;
+            const halfW = w / 2;
+            for (let ox = -halfW + 0.5; ox <= halfW - 0.5; ox += spacing) {
+              // 牆面背後的連接點 (高度在 3.0m 的位置)
+              const wallAttach = project3D(ox, Math.min(3.0, sH - 0.5), -d/2);
+              // 地面支撐點 (往後延伸 1.5m 深度)
+              const groundAnchor = project3D(ox, 0, -d/2 - 1.5);
+              // 地面底拉支撐線
+              const groundLine = project3D(ox, 0, -d/2);
+
+              targetCtx.beginPath();
+              // 斜桿
+              targetCtx.moveTo(wallAttach.x, wallAttach.y);
+              targetCtx.lineTo(groundAnchor.x, groundAnchor.y);
+              // 地面平桿
+              targetCtx.lineTo(groundLine.x, groundLine.y);
+              targetCtx.stroke();
+
+              // 加上地面斜支撐的配重沙包示意
+              targetCtx.fillStyle = isExportMode ? '#000000' : '#ef4444';
+              targetCtx.beginPath();
+              targetCtx.arc(groundAnchor.x, groundAnchor.y, 4, 0, Math.PI * 2);
+              targetCtx.fill();
+            }
+          }
+        });
+      }
+
+      // 6. 3D 尺寸標註標線 (字級加大)
+      if (state.showDimensions) {
+        renderQueue.push({
+          type: 'dimensions_3d',
+          depth: 10,
+          draw: () => {
+            targetCtx.save();
+            targetCtx.fillStyle = theme.dimColor;
+            targetCtx.strokeStyle = theme.dimLine;
+            targetCtx.font = `bold ${isExportMode ? 14 : 13}px 'JetBrains Mono'`;
+
+            // A. 寬度標線 (最前端底部)
+            const wL = project3D(-w/2, 0, d/2);
+            const wR = project3D(w/2, 0, d/2);
+            draw3DDimensionLine_internal(targetCtx, wL, wR, `W: ${w.toFixed(1)} m`);
+
+            // B. 高度標線 (左立柱旁)
+            const hB = project3D(-w/2 - 0.4, 0, -d/2);
+            const hT = project3D(-w/2 - 0.4, sH, -d/2);
+            draw3DDimensionLine_internal(targetCtx, hB, hT, `H: ${sH.toFixed(1)} m`);
+
+            if (state.structureType === 'stage') {
+              // C. 深度標線 (僅舞台模式標示深度)
+              const dF = project3D(w/2 + 0.4, 0, d/2);
+              const dB = project3D(w/2 + 0.4, 0, -d/2);
+              draw3DDimensionLine_internal(targetCtx, dF, dB, `D: ${d.toFixed(1)} m`);
+            }
+
+            targetCtx.restore();
+          }
+        });
+      }
+
+      // 執行畫家算法，由遠至近渲染
+      renderQueue.sort((a, b) => b.depth - a.depth); 
+      renderQueue.forEach(item => item.draw());
+    }
+
+    // ----------------------------------------------------
+    // 6. 桁架細部畫線與 3D 幾何工具
+    // ----------------------------------------------------
+    function drawTruss2D_internal(targetCtx, x, y, width, height, direction, chordColor, bracingColor) {
+      targetCtx.save();
+      targetCtx.strokeStyle = chordColor;
+      targetCtx.lineWidth = 1.6;
+
+      targetCtx.beginPath();
+      if (direction === 'vertical') {
+        targetCtx.moveTo(x, y); targetCtx.lineTo(x, y + height);
+        targetCtx.moveTo(x + width, y); targetCtx.lineTo(x + width, y + height);
+      } else {
+        targetCtx.moveTo(x, y); targetCtx.lineTo(x + width, y);
+        targetCtx.moveTo(x, y + height); targetCtx.lineTo(x + width, y + height);
+      }
+      targetCtx.stroke();
+
+      const segmentSize = width * (1.2 / state.braceDensity);
+      const totalLength = (direction === 'vertical') ? height : width;
+      const numSegments = Math.max(2, Math.round(totalLength / segmentSize));
+      const step = totalLength / numSegments;
+
+      targetCtx.strokeStyle = bracingColor;
+      targetCtx.lineWidth = 0.9;
+
+      targetCtx.beginPath();
+      for (let i = 0; i < numSegments; i++) {
+        if (direction === 'vertical') {
+          const topY = y + i * step;
+          const botY = y + (i + 1) * step;
+
+          targetCtx.moveTo(x, botY); targetCtx.lineTo(x + width, botY);
+          targetCtx.moveTo(x, topY); targetCtx.lineTo(x + width, botY);
+          targetCtx.moveTo(x + width, topY); targetCtx.lineTo(x, botY);
+        } else {
+          const leftX = x + i * step;
+          const rightX = x + (i + 1) * step;
+
+          targetCtx.moveTo(rightX, y); targetCtx.lineTo(rightX, y + height);
+          targetCtx.moveTo(leftX, y); targetCtx.lineTo(rightX, y + height);
+          targetCtx.moveTo(rightX, y); targetCtx.lineTo(leftX, y + height);
+        }
+      }
+      targetCtx.stroke();
+      targetCtx.restore();
+    }
+
+    function draw3DTrussColumn_internal(targetCtx, project3D, colX, height, tW, colColor, brColor, isExport) {
+      targetCtx.strokeStyle = colColor;
+      targetCtx.lineWidth = isExport ? 1.4 : 1.2;
+
+      const zBack = -state.stageDepth/2 + tW/2;
+      const zFront = -state.stageDepth/2 - tW/2;
+
+      const pFL = project3D(colX - tW/2, 0, zFront);
+      const pFR = project3D(colX + tW/2, 0, zFront);
+      const pBL = project3D(colX - tW/2, 0, zBack);
+      const pBR = project3D(colX + tW/2, 0, zBack);
+
+      const pFL_top = project3D(colX - tW/2, height, zFront);
+      const pFR_top = project3D(colX + tW/2, height, zFront);
+      const pBL_top = project3D(colX - tW/2, height, zBack);
+      const pBR_top = project3D(colX + tW/2, height, zBack);
+
+      targetCtx.beginPath();
+      targetCtx.moveTo(pFL.x, pFL.y); targetCtx.lineTo(pFL_top.x, pFL_top.y);
+      targetCtx.moveTo(pFR.x, pFR.y); targetCtx.lineTo(pFR_top.x, pFR_top.y);
+      targetCtx.moveTo(pBL.x, pBL.y); targetCtx.lineTo(pBL_top.x, pBL_top.y);
+      targetCtx.moveTo(pBR.x, pBR.y); targetCtx.lineTo(pBR_top.x, pBR_top.y);
+      targetCtx.stroke();
+
+      const segments = Math.max(3, Math.round(height / 1.5));
+      targetCtx.strokeStyle = brColor;
+      targetCtx.lineWidth = 0.8;
+
+      targetCtx.beginPath();
+      for (let i = 0; i < segments; i++) {
+        const yBot = (i / segments) * height;
+        const yTop = ((i + 1) / segments) * height;
+
+        const bFL = project3D(colX - tW/2, yBot, zFront);
+        const bFR = project3D(colX + tW/2, yBot, zFront);
+        const bBL = project3D(colX - tW/2, yBot, zBack);
+        const bBR = project3D(colX + tW/2, yBot, zBack);
+
+        const tFL = project3D(colX - tW/2, yTop, zFront);
+        const tFR = project3D(colX + tW/2, yTop, zFront);
+        const tBL = project3D(colX - tW/2, yTop, zBack);
+        const tBR = project3D(colX + tW/2, yTop, zBack);
+
+        targetCtx.moveTo(bFL.x, bFL.y); targetCtx.lineTo(tFR.x, tFR.y);
+        targetCtx.moveTo(bFR.x, bFR.y); targetCtx.lineTo(tFL.x, tFL.y);
+        targetCtx.moveTo(bBL.x, bBL.y); targetCtx.lineTo(tBR.x, tBR.y);
+        targetCtx.moveTo(bBR.x, bBR.y); targetCtx.lineTo(tBL.x, tBL.y);
+        targetCtx.moveTo(bFL.x, bFL.y); targetCtx.lineTo(tBL.x, tBL.y);
+        targetCtx.moveTo(bBL.x, bBL.y); targetCtx.lineTo(tFL.x, tFL.y);
+        targetCtx.moveTo(bFR.x, bFR.y); targetCtx.lineTo(tBR.x, tBR.y);
+        targetCtx.moveTo(bBR.x, bBR.y); targetCtx.lineTo(tFR.x, tFR.y);
+
+        targetCtx.moveTo(tFL.x, tFL.y); targetCtx.lineTo(tFR.x, tFR.y);
+        targetCtx.moveTo(tBL.x, tBL.y); targetCtx.lineTo(tBR.x, tBR.y);
+      }
+      targetCtx.stroke();
+    }
+
+    function draw3DTrussBeam_internal(targetCtx, project3D, totalW, height, tW, colColor, brColor) {
+      targetCtx.strokeStyle = colColor;
+      targetCtx.lineWidth = 1.2;
+
+      const zBack = -state.stageDepth/2 + tW/2;
+      const zFront = -state.stageDepth/2 - tW/2;
+
+      const pFL_L = project3D(-totalW/2, height - tW, zFront);
+      const pFR_L = project3D(-totalW/2, height, zFront);
+      const pBL_L = project3D(-totalW/2, height - tW, zBack);
+      const pBR_L = project3D(-totalW/2, height, zBack);
+
+      const pFL_R = project3D(totalW/2, height - tW, zFront);
+      const pFR_R = project3D(totalW/2, height, zFront);
+      const pBL_R = project3D(totalW/2, height - tW, zBack);
+      const pBR_R = project3D(totalW/2, height, zBack);
+
+      targetCtx.beginPath();
+      targetCtx.moveTo(pFL_L.x, pFL_L.y); targetCtx.lineTo(pFL_R.x, pFL_R.y);
+      targetCtx.moveTo(pFR_L.x, pFR_L.y); targetCtx.lineTo(pFR_R.x, pFR_R.y);
+      targetCtx.moveTo(pBL_L.x, pBL_L.y); targetCtx.lineTo(pBL_R.x, pBL_R.y);
+      targetCtx.moveTo(pBR_L.x, pBR_L.y); targetCtx.lineTo(pBR_R.x, pBR_R.y);
+      targetCtx.stroke();
+
+      const segments = Math.max(5, Math.round(totalW / 1.5));
+      targetCtx.strokeStyle = brColor;
+      targetCtx.lineWidth = 0.8;
+
+      targetCtx.beginPath();
+      for (let i = 0; i < segments; i++) {
+        const xBot = -totalW/2 + (i / segments) * totalW;
+        const xTop = -totalW/2 + ((i + 1) / segments) * totalW;
+
+        const bFL = project3D(xBot, height - tW, zFront);
+        const bFR = project3D(xBot, height, zFront);
+        const bBL = project3D(xBot, height - tW, zBack);
+        const bBR = project3D(xBot, height, zBack);
+
+        const tFL = project3D(xTop, height - tW, zFront);
+        const tFR = project3D(xTop, height, zFront);
+        const tBL = project3D(xTop, height - tW, zBack);
+        const tBR = project3D(xTop, height, zBack);
+
+        targetCtx.moveTo(bFL.x, bFL.y); targetCtx.lineTo(tFR.x, tFR.y);
+        targetCtx.moveTo(bFR.x, bFR.y); targetCtx.lineTo(tFL.x, tFL.y);
+        targetCtx.moveTo(bFR.x, bFR.y); targetCtx.lineTo(tBR.x, tBR.y);
+        targetCtx.moveTo(bBR.x, bBR.y); targetCtx.lineTo(tFR.x, tFR.y);
+        targetCtx.moveTo(bFL.x, bFL.y); targetCtx.lineTo(tBL.x, tBL.y);
+        targetCtx.moveTo(bBL.x, bBL.y); targetCtx.lineTo(tFL.x, tFL.y);
+      }
+      targetCtx.stroke();
+    }
+
+    // ----------------------------------------------------
+    // 7. 尺寸標記標線繪製方法
+    // ----------------------------------------------------
+    function drawDimensionLine_internal(targetCtx, x1, y1, x2, y2, offset, text, type, theme) {
+      targetCtx.save();
+      targetCtx.strokeStyle = theme.dimColor;
+      targetCtx.fillStyle = theme.dimColor;
+      targetCtx.lineWidth = 1;
+
+      targetCtx.beginPath();
+      targetCtx.strokeStyle = theme.dimExtension;
+      if (type === 'horizontal') {
+        targetCtx.moveTo(x1, y1); targetCtx.lineTo(x1, y1 - offset);
+        targetCtx.moveTo(x2, y2); targetCtx.lineTo(x2, y2 - offset);
+        targetCtx.stroke();
+
+        const lineY = y1 - offset;
+        targetCtx.beginPath();
+        targetCtx.strokeStyle = theme.dimColor;
+        targetCtx.moveTo(x1, lineY);
+        targetCtx.lineTo(x2, lineY);
+        targetCtx.stroke();
+
+        drawArrow_internal(targetCtx, x1, lineY, Math.PI, theme.dimColor);
+        drawArrow_internal(targetCtx, x2, lineY, 0, theme.dimColor);
+
+        targetCtx.textAlign = 'center';
+        targetCtx.textBaseline = 'bottom';
+        targetCtx.fillText(text, (x1 + x2) / 2, lineY - 3);
+
+      } else if (type === 'vertical') {
+        targetCtx.moveTo(x1, y1); targetCtx.lineTo(x1 + offset, y1);
+        targetCtx.moveTo(x2, y2); targetCtx.lineTo(x2 + offset, y2);
+        targetCtx.stroke();
+
+        const lineX = x1 + offset;
+        targetCtx.beginPath();
+        targetCtx.strokeStyle = theme.dimColor;
+        targetCtx.moveTo(lineX, y1);
+        targetCtx.lineTo(lineX, y2);
+        targetCtx.stroke();
+
+        drawArrow_internal(targetCtx, lineX, y1, -Math.PI / 2, theme.dimColor);
+        drawArrow_internal(targetCtx, lineX, y2, Math.PI / 2, theme.dimColor);
+
+        targetCtx.save();
+        targetCtx.translate(lineX + (offset > 0 ? 12 : -4), (y1 + y2) / 2);
+        targetCtx.rotate(-Math.PI / 2);
+        targetCtx.textAlign = 'center';
+        targetCtx.textBaseline = 'bottom';
+        targetCtx.fillText(text, 0, 0);
+        targetCtx.restore();
+
+      } else if (type === 'vertical-small') {
+        targetCtx.moveTo(x1, y1); targetCtx.lineTo(x1 + offset, y1);
+        targetCtx.moveTo(x2, y2); targetCtx.lineTo(x2 + offset, y2);
+        targetCtx.stroke();
+
+        const lineX = x1 + offset;
+        targetCtx.beginPath();
+        targetCtx.strokeStyle = theme.dimColor;
+        targetCtx.moveTo(lineX, y1);
+        targetCtx.lineTo(lineX, y2);
+        targetCtx.stroke();
+
+        drawArrow_internal(targetCtx, lineX, y1, -Math.PI / 2, theme.dimColor);
+        drawArrow_internal(targetCtx, lineX, y2, Math.PI / 2, theme.dimColor);
+
+        targetCtx.textAlign = offset > 0 ? 'left' : 'right';
+        targetCtx.textBaseline = 'middle';
+        targetCtx.fillText(text, lineX + (offset > 0 ? 5 : -5), (y1 + y2) / 2);
+      }
+
+      targetCtx.restore();
+    }
+
+    function drawArrow_internal(targetCtx, x, y, angle, color) {
+      const size = 5;
+      targetCtx.save();
+      targetCtx.translate(x, y);
+      targetCtx.rotate(angle);
+      targetCtx.fillStyle = color;
+      targetCtx.beginPath();
+      targetCtx.moveTo(0, 0);
+      targetCtx.lineTo(-size, -size / 1.5);
+      targetCtx.lineTo(-size, size / 1.5);
+      targetCtx.closePath();
+      targetCtx.fill();
+      targetCtx.restore();
+    }
+
+    function draw3DDimensionLine_internal(targetCtx, p1, p2, text) {
+      targetCtx.save();
+      targetCtx.lineWidth = 1;
+
+      targetCtx.beginPath();
+      targetCtx.moveTo(p1.x, p1.y);
+      targetCtx.lineTo(p2.x, p2.y);
+      targetCtx.stroke();
+
+      const slash = 4;
+      targetCtx.beginPath();
+      targetCtx.moveTo(p1.x - slash, p1.y + slash); targetCtx.lineTo(p1.x + slash, p1.y - slash);
+      targetCtx.moveTo(p2.x - slash, p2.y + slash); targetCtx.lineTo(p2.x + slash, p2.y - slash);
+      targetCtx.stroke();
+
+      const midX = (p1.x + p2.x) / 2;
+      const midY = (p1.y + p2.y) / 2;
+
+      targetCtx.textAlign = 'center';
+      targetCtx.textBaseline = 'bottom';
+      targetCtx.fillText(text, midX, midY - 4);
+      targetCtx.restore();
+    }
+
+    function drawEngineeringGrid(targetCtx, w, h, originX, originY, scale) {
+      targetCtx.save();
+      targetCtx.strokeStyle = '#1e293b';
+      targetCtx.lineWidth = 0.5;
+
+      const gridSpacing = scale; 
+      for (let ix = originX; ix < w; ix += gridSpacing) {
+        targetCtx.beginPath(); targetCtx.moveTo(ix, 0); targetCtx.lineTo(ix, h); targetCtx.stroke();
+      }
+      for (let ix = originX - gridSpacing; ix > 0; ix -= gridSpacing) {
+        targetCtx.beginPath(); targetCtx.moveTo(ix, 0); targetCtx.lineTo(ix, h); targetCtx.stroke();
+      }
+      for (let iy = originY; iy < h; iy += gridSpacing) {
+        targetCtx.beginPath(); targetCtx.moveTo(0, iy); targetCtx.lineTo(w, iy); targetCtx.stroke();
+      }
+      for (let iy = originY - gridSpacing; iy > 0; iy -= gridSpacing) {
+        targetCtx.beginPath(); targetCtx.moveTo(0, iy); targetCtx.lineTo(w, iy); targetCtx.stroke();
+      }
+      targetCtx.restore();
+    }
+
+    // 地面與牆面 3D 底座格線
+    function draw3DGrid_internal(targetCtx, project3D, w, d, gridLineColor) {
+      targetCtx.save();
+      targetCtx.strokeStyle = gridLineColor;
+      targetCtx.lineWidth = 0.8;
+
+      for (let ox = -w/2 - 2; ox <= w/2 + 2; ox += 1) {
+        const p1 = project3D(ox, 0, -d/2 - 2);
+        const p2 = project3D(ox, 0, d/2 + 2);
+        targetCtx.beginPath(); targetCtx.moveTo(p1.x, p1.y); targetCtx.lineTo(p2.x, p2.y); targetCtx.stroke();
+      }
+      for (let oz = -d/2 - 2; oz <= d/2 + 2; oz += 1) {
+        const p1 = project3D(-w/2 - 2, 0, oz);
+        const p2 = project3D(w/2 + 2, 0, oz);
+        targetCtx.beginPath(); targetCtx.moveTo(p1.x, p1.y); targetCtx.lineTo(p2.x, p2.y); targetCtx.stroke();
+      }
+      targetCtx.restore();
+    }
+
+    function adjustHexOpacity(hex, opacity) {
+      let c;
+      if (/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)) {
+        c = hex.substring(1).split('');
+        if (c.length == 3) {
+          c = [c[0], c[0], c[1], c[1], c[2], c[2]];
+        }
+        c = '0x' + c.join('');
+        return 'rgba(' + [(c >> 16) & 255, (c >> 8) & 255, c & 255].join(',') + ',' + opacity + ')';
+      }
+      return hex;
+    }
+
+    // ----------------------------------------------------
+    // 8. 整合滑鼠與觸控事件
+    // ----------------------------------------------------
+    function handleStart(clientX, clientY) {
+      const rect = canvas.getBoundingClientRect();
+      const clickX = clientX - rect.left;
+      const clickY = clientY - rect.top; // 修正拼寫，此處已修正 top -> rect.top 徹底解決卡死當機跑板問題
+
+      state.isDragging = true;
+      state.dragStart.x = clickX;
+      state.dragStart.y = clickY;
+
+      if (state.viewMode === 'front') {
+        if (state.backdropType !== 'none' && state.screenBoundingBox) {
+          const s = state.screenBoundingBox;
+          if (clickX >= s.x && clickX <= s.x + s.w && clickY >= s.y && clickY <= s.y + s.h) {
+            state.draggedTarget = 'screen';
+            canvas.style.cursor = 'grabbing';
+            return;
+          }
+        }
+        state.draggedTarget = 'pan';
+      } else {
+        state.draggedTarget = 'rotate3d';
+      }
+    }
+
+    function handleMove(clientX, clientY) {
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = clientX - rect.left;
+      const mouseY = clientY - rect.top;
+
+      if (state.viewMode === 'front') {
+        const padding = 80;
+        const totalDrawWidth = state.stageWidth + 3.0;
+        const totalDrawHeight = state.stageHeight + 2.5;
+        const scaleX = (rect.width - padding * 2) / totalDrawWidth;
+        const scaleY = (rect.height - padding * 2) / totalDrawHeight;
+        const scale = Math.min(scaleX, scaleY) * state.zoom;
+        const originX = rect.width / 2 + state.panX;
+        const originY = rect.height - padding - 40 + state.panY;
+
+        const mX = (mouseX - originX) / scale;
+        const mY = (originY - mouseY) / scale;
+        document.getElementById('mouseCoords').innerText = `目前位置: X: ${mX.toFixed(2)}m, Y: ${mY.toFixed(2)}m`;
+      } else {
+        document.getElementById('mouseCoords').innerText = `3D 自由旋轉觀測中`;
+      }
+
+      if (!state.isDragging) return;
+
+      const dx = mouseX - state.dragStart.x;
+      const dy = mouseY - state.dragStart.y;
+
+      if (state.draggedTarget === 'screen') {
+        const padding = 80;
+        const totalDrawWidth = state.stageWidth + 3.0;
+        const totalDrawHeight = state.stageHeight + 2.5;
+        const scaleX = (rect.width - padding * 2) / totalDrawWidth;
+        const scaleY = (rect.height - padding * 2) / totalDrawHeight;
+        const scale = Math.min(scaleX, scaleY) * state.zoom;
+
+        const deltaYInMeters = dy / scale;
+
+        let newScreenY = state.screenY - deltaYInMeters;
+        
+        // 限制離地高最小值與最大高度安全值
+        const minVal = state.structureType === 'stage' ? state.deckHeight : 0.1;
+        const maxVal = state.stageHeight - state.screenHeight - state.trussWidth;
+        newScreenY = Math.max(minVal, Math.min(maxVal, newScreenY));
+
+        state.screenY = newScreenY;
+        document.getElementById('inputScreenY').value = newScreenY.toFixed(1);
+        document.getElementById('valScreenY').innerText = `${newScreenY.toFixed(1)} m`;
+
+        updateVisualization();
+
+      } else if (state.draggedTarget === 'pan') {
+        state.panX += dx;
+        state.panY += dy;
+        updateVisualization();
+
+      } else if (state.draggedTarget === 'rotate3d') {
+        state.isoRotationY += dx * 0.007;
+        state.isoRotationX += dy * 0.007;
+        state.isoRotationX = Math.max(-80 * Math.PI / 180, Math.min(10 * Math.PI / 180, state.isoRotationX));
+        updateVisualization();
+      }
+
+      state.dragStart.x = mouseX;
+      state.dragStart.y = mouseY;
+    }
+
+    function handleEnd() {
+      state.isDragging = false;
+      state.draggedTarget = null;
+      canvas.style.cursor = 'grab';
+    }
+
+    // 滑鼠監聽
+    canvas.addEventListener('mousedown', (e) => handleStart(e.clientX, e.clientY));
+    canvas.addEventListener('mousemove', (e) => handleMove(e.clientX, e.clientY));
+    window.addEventListener('mouseup', handleEnd);
+
+    // 觸控監聽
+    canvas.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 1) {
+        handleStart(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    }, { passive: true });
+
+    canvas.addEventListener('touchmove', (e) => {
+      if (e.touches.length === 1) {
+        handleMove(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    }, { passive: true });
+
+    canvas.addEventListener('touchend', handleEnd);
+
+    // ----------------------------------------------------
+    // 9. 專業高階白底黑線向量圖檔匯出引擎 (無框排版，文字絕不跑版且與圖面完全分離)
+    // ----------------------------------------------------
+    function wrapTextAndMeasure(context, text, x, y, maxWidth, lineHeight) {
+      const words = text.split('');
+      let line = '';
+      let currentY = y;
+      
+      for (let n = 0; n < words.length; n++) {
+        // 處理手動分行
+        if (words[n] === '\n') {
+          context.fillText(line, x, currentY);
+          line = '';
+          currentY += lineHeight;
+          continue;
+        }
+        
+        let testLine = line + words[n];
+        let metrics = context.measureText(testLine);
+        let testWidth = metrics.width;
+        
+        if (testWidth > maxWidth && n > 0) {
+          context.fillText(line, x, currentY);
+          line = words[n];
+          currentY += lineHeight;
+        } else {
+          line = testLine;
+        }
+      }
+      context.fillText(line, x, currentY);
+      return currentY + lineHeight;
+    }
+
+    function exportAsBlueprintImage() {
+      try {
+        const expCanvas = document.createElement('canvas');
+        expCanvas.width = 1920;
+        expCanvas.height = 1080;
+        const expCtx = expCanvas.getContext('2d');
+
+        // 1. 純白乾淨背景
+        expCtx.fillStyle = '#ffffff';
+        expCtx.fillRect(0, 0, 1920, 1080);
+
+        // 2. 呼叫渲染分支 (高度限制在 730px 內，保留 750-1080 做為文字區，徹底解決文字壓圖跑版問題)
+        if (state.viewMode === 'front') {
+          drawStage2D(expCtx, 1920, 730, true);
+        } else {
+          drawStage3D(expCtx, 1920, 730, true);
+        }
+
+        // 3. 繪製精緻的實線工程說明與安全規範底欄表格
+        expCtx.save();
+        
+        // 畫出最外側安全防護邊框
+        expCtx.strokeStyle = '#111111';
+        expCtx.lineWidth = 1.5;
+        expCtx.strokeRect(30, 30, 1920 - 60, 1080 - 60);
+
+        // 定義表格區塊在下方的完全淨空區 (y: 750px ~ 1050px)
+        const blockX = 30;
+        const blockY = 750;
+        const blockW = 1860; // 寬度拉滿
+        const blockH = 300;
+
+        // 繪製表格大外框 (將圖面與文字表格完全劃分開來)
+        expCtx.strokeStyle = '#111111';
+        expCtx.lineWidth = 1.5;
+        expCtx.strokeRect(blockX, blockY, blockW, blockH);
+
+        // 繪製分隔線
+        expCtx.beginPath();
+        // 第一道分隔線：圖標與規格 (x: 580)
+        expCtx.moveTo(blockX + 550, blockY);
+        expCtx.lineTo(blockX + 550, blockY + blockH);
+        // 第二道分隔線：規格與備註規範 (x: 1140)
+        expCtx.moveTo(blockX + 1110, blockY);
+        expCtx.lineTo(blockX + 1110, blockY + blockH);
+        expCtx.stroke();
+
+        // --- 第一欄：圖紙標題區 (x: 50 ~ 550) ---
+        const col1X = blockX + 25;
+        expCtx.fillStyle = '#000000';
+        expCtx.font = "bold 24px 'Noto Sans TC'";
+        expCtx.textAlign = 'left';
+        expCtx.textBaseline = 'top';
+        const typeTitle = state.structureType === 'stage' ? '專業舞台系統結構施工藍圖' : '視覺宣傳打卡牆結構施工藍圖';
+        expCtx.fillText(typeTitle, col1X, blockY + 35);
+
+        expCtx.font = "14px 'Noto Sans TC'";
+        expCtx.fillStyle = '#555555';
+        expCtx.fillText(`設計單位：場地與舞台視覺即時建構規劃組`, col1X, blockY + 110);
+        expCtx.fillText(`軟體版本：STAGE VISUALIZER PRO v4.2`, col1X, blockY + 140);
+        expCtx.fillText(`審核簽章：(請確認現場地面平整度與強風防護)`, col1X, blockY + 170);
+
+        // --- 第二欄：結構尺寸參數區 (x: 610 ~ 1110) ---
+        const col2X = blockX + 580;
+        expCtx.fillStyle = '#000000';
+        expCtx.font = "bold 16px 'Noto Sans TC'";
+        expCtx.fillText("📊 結構與背景設備規格明細：", col2X, blockY + 35);
+
+        expCtx.font = "14px 'Noto Sans TC', 'JetBrains Mono'";
+        expCtx.fillStyle = '#333333';
+        let detailY = blockY + 75;
+        expCtx.fillText(`• 結構寬高：寬度 ${state.stageWidth.toFixed(2)}m  x  高度 ${state.stageHeight.toFixed(2)}m`, col2X, detailY);
+        detailY += 25;
+        if (state.structureType === 'stage') {
+          expCtx.fillText(`• 舞台地台：深度 ${state.stageDepth.toFixed(2)}m  x  地台高度 ${state.deckHeight.toFixed(2)}m`, col2X, detailY);
+          detailY += 25;
+          expCtx.fillText(`• 登台配置：${state.showSteps ? '配置左右雙登台安全階梯' : '無配置登台階梯 (平面無落差版本)'}`, col2X, detailY);
+        } else {
+          expCtx.fillText(`• 地面踢腳：地面薄型防撞底座座高 ${state.deckHeight.toFixed(2)}m`, col2X, detailY);
+          detailY += 25;
+          expCtx.fillText(`• 防風斜撐：後方 A 字斜撐三角架 (共配置 ${Math.max(2, Math.round(state.stageWidth / 2) + 1)} 組)`, col2X, detailY);
+        }
+        detailY += 25;
+        const mediaLabel = state.backdropType === 'led' ? 'LED 顯示螢幕' : state.backdropType === 'canvas' ? '大圖高張力帆布' : '無配置';
+        expCtx.fillText(`• 視覺背景：${mediaLabel} (寬 ${state.screenWidth.toFixed(2)}m  x  高 ${state.screenHeight.toFixed(2)}m, 離地高 ${state.screenY.toFixed(2)}m)`, col2X, detailY);
+
+        // --- 第三欄：現場工程備註與施工規範區 (x: 1175 ~ 1870) ---
+        const col3X = blockX + 1145;
+        const col3W = 690; // 指定安全寬度限制
+        expCtx.fillStyle = '#000000';
+        expCtx.font = "bold 16px 'Noto Sans TC'";
+        expCtx.fillText("📝 現場施工備註與安全指引規範：", col3X, blockY + 35);
+
+        expCtx.font = "14px 'Noto Sans TC'";
+        expCtx.fillStyle = '#444444';
+        
+        // 呼叫折行引擎，文字在 690px 安全寬度內自動完美換行，絕對不跑版
+        wrapTextAndMeasure(expCtx, state.designNotes, col3X, blockY + 75, col3W, 22);
+
+        // 右下角時間與比例尺浮水印
+        expCtx.fillStyle = '#888888';
+        expCtx.font = "11px 'JetBrains Mono'";
+        expCtx.fillText(`DATE: ${new Date().toLocaleDateString()} | VIEW: ${state.viewMode.toUpperCase()} | SCALE: 1:${Math.round(200 / state.zoom)} (SCALE TO FIT)`, col3X + col3W - 280, blockY + blockH - 25);
+
+        expCtx.restore();
+
+        // 4. 下載圖片檔
+        const dataURL = expCanvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.download = `專業工程藍圖_${state.structureType === 'stage' ? '舞台系統' : '打卡牆系統'}_${state.viewMode === 'front' ? '2D前視圖' : '3D立體圖'}_${Date.now()}.png`;
+        link.href = dataURL;
+        link.click();
+
+        showNotification('已成功匯出標準白底黑線工程施工圖紙！', 'success');
+      } catch (err) {
+        showNotification('匯出圖檔時發生未知錯誤：' + err.message, 'error');
+      }
+    }
+
+    // ----------------------------------------------------
+    // 10. 頁面初始化載入
+    // ----------------------------------------------------
+    window.onload = function() {
+      initUI();
+      resizeCanvas();
+      
+      // 預設套用標準中型舞台規格
+      applyPreset(presets.medium);
+      
+      resetView();
+    };
+
+  </script>
+</body>
+</html>
