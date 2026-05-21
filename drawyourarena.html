@@ -301,8 +301,8 @@
                         <!-- 所有繪製好的線條會動態渲染在此 -->
                     </svg>
 
-                    <!-- HTML 元件容器 -->
-                    <div id="elementsContainer" class="absolute inset-0 z-20 overflow-hidden">
+                    <!-- HTML 元件容器：設為 pointer-events-none 讓空白點擊可以完全穿透到 SVG 與底層 canvas -->
+                    <div id="elementsContainer" class="absolute inset-0 z-20 overflow-hidden" style="pointer-events: none;">
                         <!-- 拖曳元件與自訂區域會被放置在這裡 -->
                     </div>
 
@@ -757,7 +757,8 @@
 
             const item = document.createElement('div');
             item.id = data.id;
-            item.className = 'absolute cursor-move select-none flex flex-col items-center justify-center font-bold text-center border-2 transition-shadow duration-150';
+            // 加上 pointer-events-auto 以確保在 elementsContainer 設為 pointer-events-none 時，單一元件仍可點擊拖曳
+            item.className = 'absolute cursor-move select-none flex flex-col items-center justify-center font-bold text-center border-2 transition-shadow duration-150 pointer-events-auto';
             
             if (data.shape === 'circle') {
                 item.style.borderRadius = '50%';
@@ -1127,6 +1128,23 @@
             showToast("成功添加文字標籤");
         }
 
+        // --- 動態調整元件與線段的 pointer-events (防止拖畫時干擾) ---
+        function updatePointerEventsForTools() {
+            const items = container.querySelectorAll('.cursor-move');
+            if (activeTool === 'select') {
+                // 選取模式下：元件與線段允許滑鼠事件偵測
+                items.forEach(item => {
+                    item.style.pointerEvents = 'auto';
+                });
+                svgOverlay.style.pointerEvents = 'auto';
+            } else {
+                // 繪圖/拖曳矩形模式下：暫時停用元件與線段偵測，讓畫布流暢接收 drag 事件
+                items.forEach(item => {
+                    item.style.pointerEvents = 'none';
+                });
+                svgOverlay.style.pointerEvents = 'none';
+            }
+        }
 
         // --- 繪製隔牆線條、自訂矩形區塊與粗細設定 ---
         function setupDrawingTools() {
@@ -1154,6 +1172,7 @@
                     canvas.style.cursor = 'crosshair';
                     helpText.textContent = "繪隔牆模式：在畫布連續按點，最後「雙擊(Double Click)空處」完成！";
                     showToast("已啟用繪線隔間模式");
+                    updatePointerEventsForTools();
                 }
             });
 
@@ -1169,6 +1188,7 @@
                     canvas.style.cursor = 'crosshair';
                     helpText.textContent = "畫自訂展位模式：在畫布上「按住並拖曳」即可拉出一個自訂活動展區。";
                     showToast("已啟用拖曳畫自訂展間模式");
+                    updatePointerEventsForTools();
                 }
             });
 
@@ -1378,6 +1398,9 @@
             btnDrawRect.className = "flex flex-col items-center justify-center p-2 border border-slate-200 rounded-lg hover:border-indigo-400 hover:bg-indigo-50 transition text-xs";
             helpText.textContent = "點擊「繪製隔牆」後，在畫布上連續點選以畫出邊界，雙擊結束。";
             canvas.style.cursor = 'default';
+
+            // 切換回選取模式，重新恢復所有元件點擊偵測
+            updatePointerEventsForTools();
         }
 
         // --- 撤銷、清空與導出設定 ---
